@@ -1,153 +1,228 @@
 // Sélectionne explicitement la base
 db = db.getSiblingDB('trouve_ton_resto');
 
-// === TYPES CUISINE ===
-db.createCollection("types_cuisine", {
+//CUISINES
+db.createCollection("cuisines", {
   validator: { $jsonSchema: {
     bsonType: "object",
-    required: ["nom"],
+    required: ["cuisine_name"],
     properties: {
-      nom: { bsonType: "string" },
+      cuisine_name: { bsonType: "string" },
       description: { bsonType: "string" }
     }
   }}
 });
-db.types_cuisine.createIndex({ nom: 1 }, { unique: true });
+db.cuisines.createIndex({ cuisine_name: 1 }, { unique: true });
 
-// === ABONNEMENTS ===
-db.createCollection("abonnements", {
+//REVIEWS
+db.createCollection("reviews", {
   validator: { $jsonSchema: {
     bsonType: "object",
-    required: ["nom","prix"],
+    required: ["rating","resto","user","date"],
     properties: {
-      nom: { bsonType: "string" },
-      avantages: { bsonType: "array", items: { bsonType: "string" } },
-      prix: { bsonType: ["double","int","decimal"] }
-    }
-  }}
-});
-db.abonnements.createIndex({ nom: 1 }, { unique: true });
-
-// === GRADES ===
-db.createCollection("grades", {
-  validator: { $jsonSchema: {
-    bsonType: "object",
-    required: ["nom"],
-    properties: {
-      nom: { bsonType: "string" },
-      rang: { bsonType: "int" },
-      icone: { bsonType: "string" },
-      recompense: { bsonType: "string" }
-    }
-  }}
-});
-db.grades.createIndex({ nom: 1 }, { unique: true });
-
-// === USERS ===
-db.createCollection("users", {
-  validator: { $jsonSchema: {
-    bsonType: "object",
-    required: ["username","email"],
-    properties: {
-      username: { bsonType: "string" },
-      email: { bsonType: "string" },
-      adresse: { bsonType: "string" },
-      localisation: {
-        bsonType: "object",
-        properties: {
-          type: { enum: ["Point"] },
-          coordinates: {
-            bsonType: "array",
-            items: [{ bsonType: "double" }, { bsonType: "double" }],
-            description: "[lng, lat]"
-          }
-        }
-      },
-      abonnement: { bsonType: "objectId" },
-      badges: { bsonType: "array", items: { bsonType: "objectId" } },
-      favoris: { bsonType: "array", items: { bsonType: "objectId" } },
-      reseauxSociaux: { bsonType: "object" }
-    }
-  }}
-});
-db.users.createIndex({ username: 1 }, { unique: true });
-db.users.createIndex({ email: 1 }, { unique: true });
-db.users.createIndex({ localisation: "2dsphere" });
-
-// === RESTAURANTS ===
-db.createCollection("restaurants", {
-  validator: { $jsonSchema: {
-    bsonType: "object",
-    required: ["nom"],
-    properties: {
-      nom: { bsonType: "string" },
-      adresse: {
-        bsonType: "object",
-        properties: {
-          rue: { bsonType: "string" },
-          ville: { bsonType: "string" },
-          cp: { bsonType: "string" }
-        }
-      },
-      localisation: {
-        bsonType: "object",
-        properties: {
-          type: { enum: ["Point"] },
-          coordinates: { bsonType: "array", items: [{bsonType:"double"},{bsonType:"double"}] }
-        }
-      },
-      typeCuisine: { bsonType: "objectId" },
-      commandesDisponibles: { bsonType: "array", items: { bsonType: "string" } },
-      photos: { bsonType: "array", items: { bsonType: "string" } },
-      videos: { bsonType: "array", items: { bsonType: "string" } },
-      noteGlobale: { bsonType: ["double","int","decimal"] },
-      notePrix: { bsonType: ["double","int","decimal"] },
-      noteService: { bsonType: ["double","int","decimal"] },
-      horairesOuverture: { bsonType: "object" },
-      moyensPaiement: { bsonType: "array", items: { bsonType: "string" } },
-      siteWeb: { bsonType: "string" },
-      googleMaps: { bsonType: "string" },
-      reseauxSociaux: { bsonType: "object" },
-      tags: { bsonType: "array", items: { bsonType: "string" } }
-    }
-  }}
-});
-db.restaurants.createIndex({ "adresse.ville": 1 });
-db.restaurants.createIndex({ typeCuisine: 1 });
-db.restaurants.createIndex({ tags: 1 });
-db.restaurants.createIndex({ localisation: "2dsphere" });
-
-// === AVIS ===
-db.createCollection("avis", {
-  validator: { $jsonSchema: {
-    bsonType: "object",
-    required: ["note","auteur","restaurant","date"],
-    properties: {
-      note: { bsonType: ["int","double","decimal"] },
-      description: { bsonType: "string" },
-      auteur: { bsonType: "objectId" },
-      restaurant: { bsonType: "objectId" },
+      rating: { bsonType: ["int","double","decimal"] },
+      comment: { bsonType: "string" },
+      resto: { bsonType: "objectId" },
+      user: { bsonType: "objectId" },
       date: { bsonType: "date" }
     }
   }}
 });
-db.avis.createIndex({ auteur: 1, restaurant: 1 }, { unique: true });
-db.avis.createIndex({ restaurant: 1, date: -1 });
+db.reviews.createIndex({ resto: 1, user: 1 }, { unique: true });
+db.reviews.createIndex({ resto: 1, date: -1 });
 
-// === NOTES (optionnel) ===
-db.createCollection("notes", {
+//RATINGS
+db.createCollection("ratings", {
   validator: { $jsonSchema: {
     bsonType: "object",
-    required: ["critere","note","restaurant","utilisateur"],
+    required: ["value","source","resto","date"],
     properties: {
-      source: { bsonType: "string" },
-      critere: { bsonType: "string" },
-      note: { bsonType: ["int","double","decimal"] },
-      restaurant: { bsonType: "objectId" },
-      utilisateur: { bsonType: "objectId" }
+      value: { bsonType: ["int","double","decimal"] },
+      source: { bsonType: "string" }, // google, tripadvisor, inside, etc.
+      date: { bsonType: "date" },
+      resto: { bsonType: "objectId" },
+      total_reviews: { bsonType: "int" }
     }
   }}
 });
-db.notes.createIndex({ utilisateur: 1, restaurant: 1, critere: 1 }, { unique: true });
+db.ratings.createIndex({ resto: 1, source: 1 }, { unique: true });
 
-print("✅ Init OK: base et index créés.");
+//OPEN HOURS
+db.createCollection("open_hours", {
+  validator: { $jsonSchema: {
+    bsonType: "object",
+    required: ["resto","timezone","weekly"],
+    properties: {
+      resto: { bsonType: "objectId" },
+      timezone: { bsonType: "string" },
+      weekly: {
+        bsonType: "object",
+        properties: {
+          mon: { bsonType: "array" },
+          tue: { bsonType: "array" },
+          wed: { bsonType: "array" },
+          thu: { bsonType: "array" },
+          fri: { bsonType: "array" },
+          sat: { bsonType: "array" },
+          sun: { bsonType: "array" }
+        }
+      },
+      exceptions: {
+        bsonType: "object",
+        properties: {
+          from: { bsonType: "string" }, // YYYY-MM-DD
+          to: { bsonType: "string" }
+        }
+      },
+      temporaryClosures: {
+        bsonType: "object",
+        properties: {
+          from: { bsonType: "string" },
+          to: { bsonType: "string" },
+          reason: { bsonType: "string" }
+        }
+      }
+    }
+  }}
+});
+db.open_hours.createIndex({ resto: 1 }, { unique: true });
+
+//RESTOS
+db.createCollection("restos", {
+  validator: { $jsonSchema: {
+    bsonType: "object",
+    required: ["name","location","add_date","created_at","updated_at"],
+    properties: {
+      name: { bsonType: "string" },
+      location: {
+        bsonType: "object",
+        required: ["street","city","state","zip"],
+        properties: {
+          street: { bsonType: "string" },
+          city: { bsonType: "string" },
+          state: { bsonType: "string" },
+          zip: { bsonType: "string" }
+        }
+      },
+      price_range: { bsonType: "string" },
+      add_date: { bsonType: "date" },
+      rating: {
+        bsonType: "object",
+        properties: {
+          google_rating: { bsonType: ["int","double","decimal"] },
+          tripadvisor_rating: { bsonType: ["int","double","decimal"] },
+          inside_rating: { bsonType: ["int","double","decimal"] }
+        }
+      },
+      status: { bsonType: "string" }, // ouvert/fermé/etc.
+      open_hours: { bsonType: "objectId" },
+      halal_certificate: { bsonType: "bool" },
+      vegan: { bsonType: "bool" },
+      added_by: { bsonType: "objectId" }, // user
+      created_at: { bsonType: "date" },
+      updated_at: { bsonType: "date" },
+      social_networks: {
+        bsonType: "object",
+        properties: {
+          facebook: { bsonType: "string" },
+          instagram: { bsonType: "string" },
+          twitter: { bsonType: "string" },
+          tiktok: { bsonType: "string" },
+          youtube: { bsonType: "string" },
+          google_maps: { bsonType: "string" },
+          tripadvisor: { bsonType: "string" }
+        }
+      },
+      phone_numbers: { bsonType: "array", items: { bsonType: "string" } },
+      website: { bsonType: "string" },
+      tags: { bsonType: "array", items: { bsonType: "string" } }
+    }
+  }}
+});
+db.restos.createIndex({ "location.city": 1 });
+db.restos.createIndex({ tags: 1 });
+db.restos.createIndex({ name: "text", tags: "text" });
+
+//SUBSCRIPTIONS
+db.createCollection("subscriptions", {
+  validator: { $jsonSchema: {
+    bsonType: "object",
+    required: ["name","price_per_month","price_per_year"],
+    properties: {
+      name: { bsonType: "string" },
+      avantages: { bsonType: "array", items: { bsonType: "string" } },
+      price_per_month: { bsonType: ["double","int","decimal"] },
+      price_per_year: { bsonType: ["double","int","decimal"] }
+    }
+  }}
+});
+db.subscriptions.createIndex({ name: 1 }, { unique: true });
+
+//RANKS
+db.createCollection("ranks", {
+  validator: { $jsonSchema: {
+    bsonType: "object",
+    required: ["name","level"],
+    properties: {
+      name: { bsonType: "string" },
+      level: { bsonType: "int" },
+      icon: { bsonType: "string" },
+      reward: { bsonType: "string" }
+    }
+  }}
+});
+db.ranks.createIndex({ name: 1 }, { unique: true });
+
+//USERS
+db.createCollection("users", {
+  validator: { $jsonSchema: {
+    bsonType: "object",
+    required: ["username","mail","password","created_at","updated_at"],
+    properties: {
+      username: { bsonType: "string" },
+      mail: { bsonType: "string" },
+      phone_number: { bsonType: "string" },
+      address: {
+        bsonType: "object",
+        properties: {
+          street: { bsonType: "string" },
+          city: { bsonType: "string" },
+          state: { bsonType: "string" },
+          zip: { bsonType: "string" }
+        }
+      },
+      password: { bsonType: "string" },
+      preferences: {
+        bsonType: "object",
+        properties: {
+          cuisines: { bsonType: "array", items: { bsonType: "objectId" } },
+          price_ranges: { bsonType: "array", items: { bsonType: "string" } },
+          tags: { bsonType: "array", items: { bsonType: "string" } }
+        }
+      },
+      subscription: { bsonType: "objectId" },
+      rank: { bsonType: "objectId" },
+      restos: { bsonType: "array", items: { bsonType: "objectId" } },
+      exp_points: { bsonType: "int" },
+      level: { bsonType: "int" },
+      social_networks: {
+        bsonType: "object",
+        properties: {
+          facebook: { bsonType: "string" },
+          instagram: { bsonType: "string" },
+          twitter: { bsonType: "string" },
+          tiktok: { bsonType: "string" },
+          youtube: { bsonType: "string" },
+          google_maps: { bsonType: "string" },
+          tripadvisor: { bsonType: "string" }
+        }
+      },
+      created_at: { bsonType: "date" },
+      updated_at: { bsonType: "date" }
+    }
+  }}
+});
+db.users.createIndex({ username: 1 }, { unique: true });
+db.users.createIndex({ mail: 1 }, { unique: true });
+
+print("✅ Init OK: toutes les collections créées avec schémas et index.");
