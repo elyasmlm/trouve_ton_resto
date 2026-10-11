@@ -3,6 +3,8 @@ const cors = require('cors');
 const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const restoRoutes = require('./routes/restos');
+const cuisineRoutes = require('./routes/cuisines');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -13,6 +15,8 @@ app.use(express.json());
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/restos', restoRoutes);
+app.use('/api/cuisines', cuisineRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
