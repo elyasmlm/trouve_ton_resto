@@ -3,3 +3,4 @@ dist/
 data/
 .env
 backend/.env
+data_old_*/
