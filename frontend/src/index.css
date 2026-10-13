@@ -370,7 +370,10 @@ img, svg { display: block; max-width: 100%; }
 .side__lists a { color: var(--brown-deep); font-weight: 600; text-decoration: none; }
 
 html.snap-feed { scroll-snap-type: y proximity; }
-.feed .resto { scroll-snap-align: start; scroll-margin-top: 78px; }
+/* le décalage sous la barre vient de scroll-padding-top (html) : pas de scroll-margin en plus */
+.feed .resto { scroll-snap-align: start; }
+/* le haut de page (titre, filtres) ne doit pas être avalé par l'aimantation au chargement */
+.feed .resto:first-child { scroll-snap-align: none; }
 
 .prefs { max-width: 760px; }
 .prefs h1 { font-size: clamp(1.8rem, 7vw, 2.6rem); color: var(--brown-deep); margin: 6px 0 8px; }
@@ -387,7 +390,6 @@ html.snap-feed { scroll-snap-type: y proximity; }
   .side--lists { display: none; }
   .trends--strip { display: none; }
   .feed-layout { grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; }
-  .feed .resto { scroll-margin-top: 84px; }
 }
 @media (min-width: 1100px) {
   .side--lists { display: block; }
