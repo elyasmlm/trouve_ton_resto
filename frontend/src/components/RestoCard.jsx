@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../auth/useAuth.js'
+import { useLists } from '../lists/useLists.js'
 import { BadgeCheckIcon, ListPlusIcon, MapPinIcon, MapIcon } from './Icons.jsx'
 import PlateArt from './PlateArt.jsx'
 
@@ -38,7 +40,11 @@ function mapsUrl(r) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`
 }
 
-export default function RestoCard({ resto: r, cuisineNames = [], index = 0 }) {
+export default function RestoCard({ resto: r, cuisineNames = [], index = 0, extra = null }) {
+  const { user } = useAuth()
+  const { isSaved, openSheet } = useLists()
+  const location = useLocation()
+  const saved = isSaved(r._id)
   const premium = r.sponsored
   const rating = r.rating || {}
   const noRating = rating.inside_rating == null && rating.google_rating == null && rating.tripadvisor_rating == null
@@ -71,9 +77,15 @@ export default function RestoCard({ resto: r, cuisineNames = [], index = 0 }) {
           <h2>{r.name}</h2>
           {r.verified && <BadgeCheckIcon className="badge" role="img" aria-label="Resto vérifié" />}
         </div>
-        <Link to="/listes" className="resto__list" aria-label={`Ajouter ${r.name} à une liste`}>
-          <ListPlusIcon />
-        </Link>
+        {user ? (
+          <button type="button" className={`resto__list ${saved ? 'is-saved' : ''}`} onClick={() => openSheet(r)} aria-label={saved ? `${r.name} est dans tes listes, modifier` : `Ajouter ${r.name} à une liste`}>
+            <ListPlusIcon />
+          </button>
+        ) : (
+          <Link to="/connexion" state={{ from: location.pathname + location.search, notice: 'Connecte-toi pour utiliser tes listes.' }} className="resto__list" aria-label={`Ajouter ${r.name} à une liste`}>
+            <ListPlusIcon />
+          </Link>
+        )}
 
         <div className="meta">
           {cuisineNames.map((c) => (
@@ -121,6 +133,7 @@ export default function RestoCard({ resto: r, cuisineNames = [], index = 0 }) {
             </a>
           )}
         </div>
+        {extra}
       </div>
     </article>
   )

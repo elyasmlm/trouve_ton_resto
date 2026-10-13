@@ -6,9 +6,11 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Account from './pages/Account.jsx'
 import Preferences from './pages/Preferences.jsx'
+import Lists from './pages/Lists.jsx'
+import ListDetail from './pages/ListDetail.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import NotFound from './pages/NotFound.jsx'
-import { BellIcon, ListIcon, PlusIcon, SearchIcon } from './components/Icons.jsx'
+import { BellIcon, PlusIcon, SearchIcon } from './components/Icons.jsx'
 
 export default function App() {
   return (
@@ -41,14 +43,11 @@ export default function App() {
           path="listes"
           element={
             <RequireAuth>
-              <ComingSoon
-                icon={ListIcon}
-                title="Tes listes"
-                text="Ta wishlist, les restos déjà testés et tes listes perso, à partager avec tes potes."
-              />
+              <Lists />
             </RequireAuth>
           }
         />
+        <Route path="listes/:id" element={<ListDetail />} />
         <Route
           path="notifications"
           element={

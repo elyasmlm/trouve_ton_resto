@@ -4,6 +4,7 @@ const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const trendRoutes = require('./routes/trends');
+const listRoutes = require('./routes/lists');
 const { attachUser } = require('./middleware/auth');
 const restoRoutes = require('./routes/restos');
 const cuisineRoutes = require('./routes/cuisines');
@@ -19,6 +20,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/trends', trendRoutes);
+app.use('/api/lists', listRoutes);
 app.use('/api/restos', restoRoutes);
 app.use('/api/cuisines', cuisineRoutes);
 

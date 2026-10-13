@@ -5,12 +5,15 @@ import '@fontsource-variable/rubik'
 import './index.css'
 import App from './App.jsx'
 import AuthProvider from './auth/AuthProvider.jsx'
+import ListsProvider from './lists/ListsProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <ListsProvider>
+          <App />
+        </ListsProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
