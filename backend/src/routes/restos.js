@@ -6,6 +6,10 @@ const Rating = require('../models/Rating');
 const Review = require('../models/Review');
 const { requireAuth, requireRole, httpError } = require('../middleware/auth');
 const { searchRestos } = require('../services/restoSearch');
+const loadResto = require('../middleware/loadResto');
+const reviewRoutes = require('./reviews');
+const photoRoutes = require('./photos');
+const ratingRoutes = require('./ratings');
 const { isOpenAt } = require('../utils/openHours');
 
 const router = express.Router();
@@ -44,22 +48,14 @@ function canEdit(user, resto) {
   return !resto.verified && resto.added_by && resto.added_by.equals(user._id);
 }
 
-async function loadResto(req, res, next) {
-  try {
-    if (!mongoose.isValidObjectId(req.params.id)) throw httpError(404, 'Resto not found');
-    const resto = await Resto.findById(req.params.id);
-    if (!resto) throw httpError(404, 'Resto not found');
-    req.resto = resto;
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
-
 function requireEditor(req, res, next) {
   if (!canEdit(req.user, req.resto)) return next(httpError(403, 'Forbidden'));
   next();
 }
+
+router.use('/:id/reviews', reviewRoutes);
+router.use('/:id/photos', photoRoutes);
+router.use('/:id/ratings', ratingRoutes);
 
 router.get('/', async (req, res, next) => {
   try {
