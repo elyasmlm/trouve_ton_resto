@@ -29,6 +29,7 @@ const userSchema = new mongoose.Schema(
     },
     password: { type: String, required: true, select: false },
     role: { type: String, enum: ROLES, default: 'user' },
+    token_version: { type: Number, default: 0 }, // augmenté pour invalider tous les jetons existants
     preferences: {
       cuisines: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Cuisine' }],
       price_ranges: [String],
@@ -60,6 +61,7 @@ userSchema.methods.checkPassword = function checkPassword(plain) {
 userSchema.methods.toJSON = function toJSON() {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.token_version;
   delete obj.__v;
   return obj;
 };

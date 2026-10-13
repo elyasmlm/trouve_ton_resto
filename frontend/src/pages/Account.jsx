@@ -1,11 +1,26 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { errorMessage } from '../api/errors.js'
 import { useAuth } from '../auth/useAuth.js'
 
 const ROLES = { user: 'Membre', premium: 'Membre premium', restaurateur: 'Restaurateur', admin: 'Admin' }
 
 export default function Account() {
-  const { user, logout } = useAuth()
+  const { user, logout, logoutEverywhere } = useAuth()
   const navigate = useNavigate()
+
+  const [error, setError] = useState('')
+
+  const leaveEverywhere = async () => {
+    if (!window.confirm('Te déconnecter de tous tes appareils ? Il faudra te reconnecter partout.')) return
+    setError('')
+    try {
+      await logoutEverywhere()
+      navigate('/')
+    } catch (err) {
+      setError(errorMessage(err))
+    }
+  }
 
   const leave = () => {
     navigate('/')
@@ -42,6 +57,17 @@ export default function Account() {
       <button type="button" className="btn btn--secondary btn--block" onClick={leave}>
         Me déconnecter
       </button>
+      <p className="side__hint" style={{ marginTop: 16, textAlign: 'center' }}>
+        Tu restes connecté longtemps sur cet appareil. Un téléphone perdu ou un appareil partagé ?
+      </p>
+      <button type="button" className="btn btn--link btn--block" onClick={leaveEverywhere}>
+        Me déconnecter de tous mes appareils
+      </button>
+      {error && (
+        <p className="alert" role="alert" style={{ marginTop: 12 }}>
+          {error}
+        </p>
+      )}
     </section>
   )
 }

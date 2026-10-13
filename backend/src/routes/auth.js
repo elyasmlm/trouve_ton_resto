@@ -1,18 +1,13 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { httpError } = require('../middleware/auth');
+const { httpError, requireAuth } = require('../middleware/auth');
+const { signToken } = require('../services/tokens');
 const { ensureDefaultLists } = require('../services/lists');
 
 const router = express.Router();
 
 const MAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function signToken(user) {
-  return jwt.sign({ sub: user.id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  });
-}
 
 router.post('/register', async (req, res, next) => {
   try {
@@ -48,6 +43,16 @@ router.post('/login', async (req, res, next) => {
       throw httpError(401, 'Invalid credentials');
     }
     res.json({ token: signToken(user), user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// « Se déconnecter de tous les appareils » : tous les jetons déjà émis deviennent invalides
+router.post('/logout-all', requireAuth, async (req, res, next) => {
+  try {
+    await User.updateOne({ _id: req.user._id }, { $inc: { token_version: 1 } });
+    res.status(204).end();
   } catch (err) {
     next(err);
   }
