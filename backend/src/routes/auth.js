@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { httpError } = require('../middleware/auth');
+const { ensureDefaultLists } = require('../services/lists');
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ router.post('/register', async (req, res, next) => {
 
     // role is never taken from the request: everybody starts as a plain user
     const user = await User.create({ username, mail, password });
+    await ensureDefaultLists(user._id).catch(() => {}); // sinon créées au premier accès à /api/lists
     res.status(201).json({ token: signToken(user), user });
   } catch (err) {
     if (err.code === 11000) return next(httpError(409, 'username or mail already used'));

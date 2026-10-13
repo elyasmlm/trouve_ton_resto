@@ -56,6 +56,12 @@ export const TrophyIcon = (p) => (
 export const ChartIcon = (p) => (
   <svg {...base} {...p}><path d="M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-6" /></svg>
 )
+export const CheckCircleIcon = (p) => (
+  <svg {...base} {...p}><circle cx="12" cy="12" r="8.5" /><path d="m8.2 12.4 2.6 2.6 5-5.4" /></svg>
+)
+export const FolderIcon = (p) => (
+  <svg {...base} {...p}><path d="M3.5 7.5a1.5 1.5 0 0 1 1.5-1.5h4l2 2.2h8a1.5 1.5 0 0 1 1.5 1.5v8.3a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z" /></svg>
+)
 export const LogoMark = (p) => (
   <svg viewBox="0 0 48 48" aria-hidden="true" {...p}>
     <circle cx="24" cy="24" r="22" fill="#5B4035" stroke="#432D25" strokeWidth="2" />
