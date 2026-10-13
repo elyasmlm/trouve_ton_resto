@@ -3,8 +3,8 @@ import { useAuth } from '../auth/useAuth.js'
 import { useLists } from '../lists/useLists.js'
 import { BadgeCheckIcon, ListPlusIcon, MapPinIcon, MapIcon } from './Icons.jsx'
 import PlateArt from './PlateArt.jsx'
+import { distance, fmt, isVideo, mapsUrl, safeWebsite } from '../utils/resto.js'
 
-const fmt = (n) => n.toFixed(1).replace('.', ',')
 
 function Rate({ value, label }) {
   if (value == null) return null
@@ -33,12 +33,6 @@ function Price({ range }) {
   )
 }
 
-const distance = (m) => (m == null ? null : m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`)
-
-function mapsUrl(r) {
-  const dest = r.geo ? `${r.geo.coordinates[1]},${r.geo.coordinates[0]}` : `${r.name} ${r.location.street} ${r.location.city}`
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`
-}
 
 export default function RestoCard({ resto: r, cuisineNames = [], index = 0, extra = null }) {
   const { user } = useAuth()
@@ -48,7 +42,8 @@ export default function RestoCard({ resto: r, cuisineNames = [], index = 0, extr
   const premium = r.sponsored
   const rating = r.rating || {}
   const noRating = rating.inside_rating == null && rating.google_rating == null && rating.tripadvisor_rating == null
-  const website = typeof r.website === 'string' && /^https?:\/\//i.test(r.website) ? r.website : null
+  const website = safeWebsite(r.website)
+  const cover = r.photos?.[0]
   const phone = r.phone_numbers?.[0]
   const dist = distance(r.distance)
   const traits = [r.vegan && 'Végé', r.halal_certificate && 'Halal'].filter(Boolean)
@@ -56,7 +51,15 @@ export default function RestoCard({ resto: r, cuisineNames = [], index = 0, extr
   return (
     <article className={`resto ${premium ? 'resto--premium' : ''}`} style={{ '--i': index }}>
       <div className="resto__photo">
-        <PlateArt />
+        {cover ? (
+          isVideo(cover.url) ? (
+            <video src={cover.url} muted loop playsInline autoPlay preload="metadata" aria-label={cover.caption || r.name} />
+          ) : (
+            <img src={cover.url} alt={cover.caption || r.name} loading="lazy" />
+          )
+        ) : (
+          <PlateArt />
+        )}
         <div className="resto__flags">
           {premium && <span className="flag flag--sponso">Sponsorisé</span>}
           {r.is_open === true && (

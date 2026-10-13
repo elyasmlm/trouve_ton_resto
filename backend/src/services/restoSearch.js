@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Resto = require('../models/Resto');
 const Cuisine = require('../models/Cuisine');
+const Photo = require('../models/Photo');
 const { isOpenAt } = require('../utils/openHours');
 const { httpError } = require('../middleware/auth');
 
@@ -177,7 +178,22 @@ async function searchRestos(query, user) {
     total = res.total[0] ? res.total[0].n : 0;
   }
 
+  await attachPhotos(items);
   return { items, page, limit, total, pages: Math.ceil(total / limit) };
+}
+
+// Joint à chaque resto de la page ses 5 photos les plus récentes (une seule requête pour toute la page)
+async function attachPhotos(items) {
+  if (!items.length) return;
+  const photos = await Photo.find({ resto: { $in: items.map((r) => r._id) } }).sort({ created_at: -1 }).lean();
+  const byResto = new Map();
+  for (const p of photos) {
+    const key = String(p.resto);
+    const list = byResto.get(key) || [];
+    if (list.length < 5) list.push({ url: p.url, caption: p.caption });
+    byResto.set(key, list);
+  }
+  for (const r of items) r.photos = byResto.get(String(r._id)) || [];
 }
 
 module.exports = { searchRestos };
