@@ -125,3 +125,19 @@ describe('GET /api/restos?sort=for_you', () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe('photos in the feed', () => {
+  it('attaches the 5 latest photos of each resto', async () => {
+    const Photo = require('../src/models/Photo');
+    const sushi = await Resto.findOne({ name: 'Sushi Bar' });
+    for (let i = 1; i <= 7; i += 1) {
+      await Photo.create({ resto: sushi._id, user: userId, url: `https://example.com/${i}.jpg`, created_at: new Date(2026, 0, i) });
+    }
+    const res = await request(app).get('/api/restos?q=Sushi Bar');
+    const item = res.body.items.find((r) => r.name === 'Sushi Bar');
+    expect(item.photos).toHaveLength(5);
+    expect(item.photos[0].url).toBe('https://example.com/7.jpg');
+    const other = (await request(app).get('/api/restos?q=Bistrot')).body.items[0];
+    expect(other.photos).toEqual([]);
+  });
+});

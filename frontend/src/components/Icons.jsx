@@ -62,6 +62,15 @@ export const CheckCircleIcon = (p) => (
 export const FolderIcon = (p) => (
   <svg {...base} {...p}><path d="M3.5 7.5a1.5 1.5 0 0 1 1.5-1.5h4l2 2.2h8a1.5 1.5 0 0 1 1.5 1.5v8.3a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z" /></svg>
 )
+export const PhoneIcon = (p) => (
+  <svg {...base} {...p}><path d="M5 4.5h3.2l1.5 4-2 1.3a11 11 0 0 0 5.5 5.5l1.3-2 4 1.5V19a1.5 1.5 0 0 1-1.6 1.5A14.5 14.5 0 0 1 3.5 6.1 1.5 1.5 0 0 1 5 4.5z" /></svg>
+)
+export const GlobeIcon = (p) => (
+  <svg {...base} {...p}><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.4 2.4 3.4 5.3 3.4 8.5s-1 6.1-3.4 8.5c-2.4-2.4-3.4-5.3-3.4-8.5s1-6.1 3.4-8.5z" /></svg>
+)
+export const ShareIcon = (p) => (
+  <svg {...base} {...p}><path d="M12 15V4M8 8l4-4 4 4" /><path d="M5 12v6.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V12" /></svg>
+)
 export const LogoMark = (p) => (
   <svg viewBox="0 0 48 48" aria-hidden="true" {...p}>
     <circle cx="24" cy="24" r="22" fill="#5B4035" stroke="#432D25" strokeWidth="2" />

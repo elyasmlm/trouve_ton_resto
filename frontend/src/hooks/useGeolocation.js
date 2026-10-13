@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { storage } from '../api/client.js'
 
+export const GEO_TEXT = {
+  asking: 'Recherche de ta position…',
+  denied: 'Position refusée. Tu peux l’autoriser dans les réglages de ton navigateur.',
+  error: 'Impossible de te localiser pour l’instant.',
+  unavailable: 'Ton navigateur ne gère pas la géolocalisation.',
+}
+
 const KEY = 'ttr_geo'
 const supported = typeof navigator !== 'undefined' && 'geolocation' in navigator
 

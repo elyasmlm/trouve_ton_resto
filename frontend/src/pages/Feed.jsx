@@ -1,102 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import api from '../api/client.js'
-import { useAuth } from '../auth/useAuth.js'
-import { useGeolocation } from '../hooks/useGeolocation.js'
+import { useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { useFeed } from '../hooks/useFeed.js'
+import { useMediaQuery } from '../hooks/useMediaQuery.js'
 import ListsPanel from '../components/ListsPanel.jsx'
 import Loader from '../components/Loader.jsx'
 import { MapPinIcon } from '../components/Icons.jsx'
 import RestoCard from '../components/RestoCard.jsx'
 import TrendChips from '../components/TrendChips.jsx'
+import FeedReels from './FeedReels.jsx'
+import { NEARBY_RADIUS_KM } from '../hooks/useFeed.js'
+import { GEO_TEXT } from '../hooks/useGeolocation.js'
 
-const PAGE_SIZE = 8
-const NEARBY_RADIUS_KM = 25
 
-const GEO_TEXT = {
-  asking: 'Recherche de ta position…',
-  denied: 'Position refusée. Tu peux l’autoriser dans les réglages de ton navigateur.',
-  error: 'Impossible de te localiser pour l’instant.',
-  unavailable: 'Ton navigateur ne gère pas la géolocalisation.',
-}
-
-export default function Feed() {
-  const { user } = useAuth()
-  const [params, setParams] = useSearchParams()
-  const tag = params.get('tag')
-  const cuisine = params.get('cuisine')
-  const geo = useGeolocation()
-  const lat = geo.coords?.lat
-  const lng = geo.coords?.lng
-  const prefsKey = JSON.stringify(user?.preferences || null)
-
-  const [trends, setTrends] = useState({ tags: [], cuisines: [] })
-  const [cuisineNames, setCuisineNames] = useState({})
-  const [feed, setFeed] = useState({ status: 'loading', items: [], page: 1, pages: 1, widened: false })
-  const [loadingMore, setLoadingMore] = useState(false)
-  const request = useRef(0)
+function FeedDesktop({ f }) {
+  const { user, tag, cuisine, filterLabel, setFilter, geo, trends, cuisineNames, feed, load, loadMore, loadingMore } = f
 
   // Scroll aimanté entre les restos (uniquement sur cette page)
   useEffect(() => {
     document.documentElement.classList.add('snap-feed')
     return () => document.documentElement.classList.remove('snap-feed')
   }, [])
-
-  useEffect(() => {
-    Promise.all([api.get('/trends'), api.get('/cuisines')])
-      .then(([t, c]) => {
-        setTrends(t.data)
-        setCuisineNames(Object.fromEntries(c.data.items.map((x) => [x._id, x.cuisine_name])))
-      })
-      .catch(() => {})
-  }, [])
-
-  const fetchPage = useCallback(
-    async (page) => {
-      const base = { limit: PAGE_SIZE, page, sort: 'for_you', ...(tag && { tags: tag }), ...(cuisine && { cuisine }) }
-      if (lat === undefined) return { ...(await api.get('/restos', { params: base })).data, widened: false }
-      const near = { ...base, lat, lng, radius: NEARBY_RADIUS_KM }
-      const res = (await api.get('/restos', { params: near })).data
-      if (res.total > 0 || page > 1) return { ...res, widened: false }
-      // rien à côté : on élargit plutôt que d'afficher un fil vide
-      return { ...(await api.get('/restos', { params: { ...base, lat, lng } })).data, widened: true }
-    },
-    [tag, cuisine, lat, lng],
-  )
-
-  // (re)charge la première page ; les réponses d'une requête périmée sont ignorées
-  const load = useCallback(() => {
-    const id = ++request.current
-    setFeed((f) => ({ ...f, status: 'loading' }))
-    fetchPage(1)
-      .then((res) => id === request.current && setFeed({ status: 'ok', items: res.items, page: 1, pages: res.pages, widened: res.widened }))
-      .catch(() => id === request.current && setFeed((f) => ({ ...f, status: 'error' })))
-  }, [fetchPage])
-
-  useEffect(() => {
-    load()
-  }, [load, prefsKey])
-
-  const loadMore = async () => {
-    const id = request.current
-    setLoadingMore(true)
-    try {
-      const res = await fetchPage(feed.page + 1)
-      if (id === request.current) setFeed((f) => ({ ...f, items: [...f.items, ...res.items], page: f.page + 1, pages: res.pages }))
-    } catch {
-      /* le bouton reste disponible pour réessayer */
-    } finally {
-      setLoadingMore(false)
-    }
-  }
-
-  const setFilter = (key, value) => {
-    const next = new URLSearchParams(params)
-    next.delete('tag')
-    next.delete('cuisine')
-    if (value) next.set(key, value)
-    setParams(next, { replace: true })
-  }
-  const filterLabel = tag ? `#${tag}` : cuisine
 
   return (
     <div className="wrap wrap--feed fade-in">
@@ -172,7 +95,7 @@ export default function Feed() {
             <>
               <div className="feed">
                 {feed.items.map((r, i) => (
-                  <RestoCard key={r._id} index={i % PAGE_SIZE} resto={r} cuisineNames={(r.cuisines || []).map((id) => cuisineNames[id]).filter(Boolean)} />
+                  <RestoCard key={r._id} index={i % 8} resto={r} cuisineNames={(r.cuisines || []).map((id) => cuisineNames[id]).filter(Boolean)} />
                 ))}
               </div>
               {feed.page < feed.pages && (
@@ -195,4 +118,11 @@ export default function Feed() {
       </div>
     </div>
   )
+}
+
+// Téléphone : fil vertical plein écran façon TikTok ; ordinateur : cartes en colonnes
+export default function Feed() {
+  const feed = useFeed()
+  const mobile = useMediaQuery('(max-width: 879px)')
+  return mobile ? <FeedReels f={feed} /> : <FeedDesktop f={feed} />
 }
