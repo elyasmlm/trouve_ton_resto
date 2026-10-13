@@ -1,0 +1,127 @@
+import { Link } from 'react-router-dom'
+import { BadgeCheckIcon, ListPlusIcon, MapPinIcon, MapIcon } from './Icons.jsx'
+import PlateArt from './PlateArt.jsx'
+
+const fmt = (n) => n.toFixed(1).replace('.', ',')
+
+function Rate({ value, label }) {
+  if (value == null) return null
+  return (
+    <span className="rate" role="img" aria-label={`${label} : ${fmt(value)} sur 5`}>
+      <span className="rate__src">{label}</span>
+      <span className="rate__line" aria-hidden="true">
+        <span className="stars" style={{ '--pct': `${(value / 5) * 100}%` }}>
+          ★★★★★
+        </span>
+        <b>{fmt(value)}</b>
+      </span>
+    </span>
+  )
+}
+
+// € plein pour le niveau de prix, € estompés pour le reste
+function Price({ range }) {
+  if (!range) return null
+  if (!/^€{1,4}$/.test(range)) return <span className="price">{range}</span>
+  return (
+    <span className="price" aria-label={`Prix : ${range.length} sur 4`}>
+      <b>{range}</b>
+      <i>{'€'.repeat(4 - range.length)}</i>
+    </span>
+  )
+}
+
+const distance = (m) => (m == null ? null : m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`)
+
+function mapsUrl(r) {
+  const dest = r.geo ? `${r.geo.coordinates[1]},${r.geo.coordinates[0]}` : `${r.name} ${r.location.street} ${r.location.city}`
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`
+}
+
+export default function RestoCard({ resto: r, cuisineNames = [], index = 0 }) {
+  const premium = r.sponsored
+  const rating = r.rating || {}
+  const noRating = rating.inside_rating == null && rating.google_rating == null && rating.tripadvisor_rating == null
+  const website = typeof r.website === 'string' && /^https?:\/\//i.test(r.website) ? r.website : null
+  const phone = r.phone_numbers?.[0]
+  const dist = distance(r.distance)
+  const traits = [r.vegan && 'Végé', r.halal_certificate && 'Halal'].filter(Boolean)
+
+  return (
+    <article className={`resto ${premium ? 'resto--premium' : ''}`} style={{ '--i': index }}>
+      <div className="resto__photo">
+        <PlateArt />
+        <div className="resto__flags">
+          {premium && <span className="flag flag--sponso">Sponsorisé</span>}
+          {r.is_open === true && (
+            <span className="flag flag--open">
+              <i /> Ouvert
+            </span>
+          )}
+          {r.is_open === false && (
+            <span className="flag flag--closed">
+              <i /> Fermé
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="resto__body">
+        <div className="resto__title">
+          <h2>{r.name}</h2>
+          {r.verified && <BadgeCheckIcon className="badge" role="img" aria-label="Resto vérifié" />}
+        </div>
+        <Link to="/listes" className="resto__list" aria-label={`Ajouter ${r.name} à une liste`}>
+          <ListPlusIcon />
+        </Link>
+
+        <div className="meta">
+          {cuisineNames.map((c) => (
+            <span className="chip" key={c}>
+              {c}
+            </span>
+          ))}
+          {!r.verified && <span className="chip chip--ghost">Non vérifié</span>}
+          <Price range={r.price_range} />
+        </div>
+
+        <p className="resto__address">
+          <MapPinIcon />
+          <span>
+            {r.location.street}, {r.location.zip} {r.location.city}
+            {dist && <span className="resto__dist"> · {dist}</span>}
+          </span>
+        </p>
+
+        {traits.length > 0 && (
+          <div className="traits">
+            {traits.map((t) => (
+              <span className="trait" key={t}>
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="ratings">
+          {noRating && <span className="rate rate--none">Pas encore noté</span>}
+          <Rate value={rating.inside_rating} label="Le site" />
+          <Rate value={rating.google_rating} label="Google" />
+          <Rate value={rating.tripadvisor_rating} label="Tripadvisor" />
+        </div>
+
+        <div className="actions">
+          <a href={mapsUrl(r)} target="_blank" rel="noopener noreferrer">
+            <MapIcon /> Itinéraire
+          </a>
+          {phone && <a href={`tel:${phone.replace(/[^\d+]/g, '')}`}>Appeler</a>}
+          {website && (
+            <a href={website} target="_blank" rel="noopener noreferrer">
+              Site web
+            </a>
+          )}
+        </div>
+      </div>
+    </article>
+  )
+}
