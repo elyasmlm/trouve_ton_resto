@@ -4,7 +4,7 @@ function notFound(req, res) {
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  const status = err.status || (err.name === 'ValidationError' ? 400 : 500);
+  const status = err.status || (['ValidationError', 'CastError'].includes(err.name) ? 400 : 500);
   if (status >= 500) console.error(err);
   res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
 }
