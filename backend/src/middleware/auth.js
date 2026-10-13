@@ -10,16 +10,25 @@ function bearerToken(req) {
   return scheme === 'Bearer' && token ? token : null;
 }
 
+// Vérifie la signature, la date et la « version » du jeton (augmentée par « se déconnecter partout »)
+async function authenticate(token) {
+  const payload = jwt.verify(token, process.env.JWT_SECRET);
+  const user = await User.findById(payload.sub);
+  if (!user || (payload.v || 0) !== (user.token_version || 0)) return null;
+  return { user, payload };
+}
+
 // Identifie l'utilisateur quand un token valide est fourni, sinon continue en anonyme (jamais d'erreur)
 async function attachUser(req, res, next) {
   try {
     const token = bearerToken(req);
-    if (token) {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = (await User.findById(payload.sub)) || undefined;
+    const session = token && (await authenticate(token));
+    if (session) {
+      req.user = session.user;
+      req.tokenPayload = session.payload;
     }
   } catch {
-    /* token absent ou invalide : visiteur anonyme */
+    /* token absent, expiré ou invalide : visiteur anonyme */
   }
   next();
 }
@@ -27,20 +36,17 @@ async function attachUser(req, res, next) {
 async function requireAuth(req, res, next) {
   if (req.user) return next();
   try {
-    const header = req.headers.authorization || '';
-    const [scheme, token] = header.split(' ');
-    if (scheme !== 'Bearer' || !token) throw httpError(401, 'Authentication required');
-
-    let payload;
+    const token = bearerToken(req);
+    if (!token) throw httpError(401, 'Authentication required');
+    let session;
     try {
-      payload = jwt.verify(token, process.env.JWT_SECRET);
+      session = await authenticate(token);
     } catch {
-      throw httpError(401, 'Invalid or expired token');
+      session = null;
     }
-
-    const user = await User.findById(payload.sub);
-    if (!user) throw httpError(401, 'Invalid or expired token');
-    req.user = user;
+    if (!session) throw httpError(401, 'Invalid or expired token');
+    req.user = session.user;
+    req.tokenPayload = session.payload;
     next();
   } catch (err) {
     next(err);

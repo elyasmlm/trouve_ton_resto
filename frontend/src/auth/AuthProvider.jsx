@@ -17,7 +17,11 @@ export default function AuthProvider({ children }) {
     let cancelled = false
     api
       .get('/users/me')
-      .then((res) => !cancelled && setUser(res.data.user))
+      .then((res) => {
+        // le serveur renvoie un jeton neuf quand l'ancien a plus de 7 jours : la session se prolonge à chaque ouverture
+        if (res.data.token) storage.set(TOKEN_KEY, res.data.token)
+        if (!cancelled) setUser(res.data.user)
+      })
       .catch(() => !cancelled && storage.remove(TOKEN_KEY))
       .finally(() => !cancelled && setLoading(false))
     return () => {
@@ -56,6 +60,12 @@ export default function AuthProvider({ children }) {
     setTimeout(() => setJustLoggedOut(false), 1000)
   }, [])
 
+  // Invalide tous les jetons du compte (téléphone perdu, appareil partagé), puis déconnecte cet appareil
+  const logoutEverywhere = useCallback(async () => {
+    await api.post('/auth/logout-all')
+    logout()
+  }, [logout])
+
   const updateUser = useCallback((next) => setUser(next), [])
 
   const continueAsGuest = useCallback(() => {
@@ -64,8 +74,8 @@ export default function AuthProvider({ children }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, guest, justLoggedOut, login, register, logout, updateUser, continueAsGuest }),
-    [user, loading, guest, justLoggedOut, login, register, logout, updateUser, continueAsGuest],
+    () => ({ user, loading, guest, justLoggedOut, login, register, logout, logoutEverywhere, updateUser, continueAsGuest }),
+    [user, loading, guest, justLoggedOut, login, register, logout, logoutEverywhere, updateUser, continueAsGuest],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

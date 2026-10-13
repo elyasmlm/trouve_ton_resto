@@ -2,11 +2,14 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Cuisine = require('../models/Cuisine');
 const { requireAuth, httpError } = require('../middleware/auth');
+const { signToken, needsRenewal } = require('../services/tokens');
 
 const router = express.Router();
 
+// Profil. Si le jeton a plus de 7 jours, on en renvoie un neuf : la session se prolonge à chaque ouverture de l'appli.
 router.get('/me', requireAuth, (req, res) => {
-  res.json({ user: req.user });
+  const renewed = req.tokenPayload && needsRenewal(req.tokenPayload) ? { token: signToken(req.user) } : {};
+  res.json({ user: req.user, ...renewed });
 });
 
 const PRICE_RE = /^€{1,4}$/;

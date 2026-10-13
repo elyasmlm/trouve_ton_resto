@@ -520,3 +520,7 @@ html.reels-mode .header, html.reels-mode .footer { display: none; }
 
 /* photo / vidéo d'un resto dans la carte (ordinateur et listes) */
 .resto__photo img, .resto__photo video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* tout ce qui est cliquable affiche le curseur « main » (sauf quand c'est désactivé) */
+button:not(:disabled), [role='checkbox'], [role='tab'], summary, label.switch { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
