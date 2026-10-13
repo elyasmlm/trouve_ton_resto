@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import api from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import Compass from '../components/Compass.jsx'
 import FeatureSlider from '../components/FeatureSlider.jsx'
 import Loader from '../components/Loader.jsx'
-import RestoCard from '../components/RestoCard.jsx'
+import Feed from './Feed.jsx'
 
 function Landing() {
   const { continueAsGuest } = useAuth()
@@ -98,65 +96,6 @@ function Landing() {
           </Link>
         </div>
       </section>
-    </div>
-  )
-}
-
-function Feed() {
-  const { user } = useAuth()
-  const [state, setState] = useState({ status: 'loading', items: [], cuisines: {} })
-
-  const load = useCallback(() => {
-    setState((s) => ({ ...s, status: 'loading' }))
-    Promise.all([api.get('/restos', { params: { limit: 20 } }), api.get('/cuisines')])
-      .then(([restos, cuisines]) =>
-        setState({
-          status: 'ok',
-          items: restos.data.items,
-          cuisines: Object.fromEntries(cuisines.data.items.map((c) => [c._id, c.cuisine_name])),
-        }),
-      )
-      .catch(() => setState((s) => ({ ...s, status: 'error' })))
-  }, [])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
-  return (
-    <div className="wrap fade-in">
-      <div className="feed-head">
-        <span className="eyebrow">{user ? 'Ton fil' : 'Autour de toi'}</span>
-        <h1>{user ? `Salut ${user.username} !` : 'Les restos du moment'}</h1>
-        <p>{user ? 'Voilà ce qui se passe autour de toi.' : 'Tu explores en invité : crée un compte pour garder tes favoris.'}</p>
-      </div>
-
-      {state.status === 'loading' && <Loader />}
-      {state.status === 'error' && (
-        <div className="state">
-          <h2>Les restos n’ont pas pu charger</h2>
-          <p>Vérifie ta connexion, puis réessaie.</p>
-          <button type="button" className="btn btn--primary" onClick={load}>
-            Réessayer
-          </button>
-        </div>
-      )}
-      {state.status === 'ok' && state.items.length === 0 && (
-        <div className="state">
-          <h2>Aucun resto pour l’instant</h2>
-          <p>Sois le premier à ajouter une bonne adresse !</p>
-          <Link to="/ajouter" className="btn btn--primary">
-            Ajouter un resto
-          </Link>
-        </div>
-      )}
-      {state.status === 'ok' && state.items.length > 0 && (
-        <div className="feed">
-          {state.items.map((r, i) => (
-            <RestoCard key={r._id} index={i} resto={r} cuisineNames={(r.cuisines || []).map((id) => state.cuisines[id]).filter(Boolean)} />
-          ))}
-        </div>
-      )}
     </div>
   )
 }

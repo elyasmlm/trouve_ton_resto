@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { errorMessage } from '../api/errors.js'
 import PasswordField from '../components/PasswordField.jsx'
@@ -7,7 +7,6 @@ import { LogoMark } from '../components/Icons.jsx'
 
 export default function Register() {
   const { user, register } = useAuth()
-  const navigate = useNavigate()
   const location = useLocation()
   const nameId = useId()
   const mailId = useId()
@@ -16,18 +15,21 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [justRegistered, setJustRegistered] = useState(false)
 
   const from = location.state?.from || '/'
-  if (user) return <Navigate to={from} replace />
+  // après une inscription, on propose de régler ses goûts (sauf si on venait d'une page précise)
+  if (user) return <Navigate to={justRegistered && !location.state?.from ? '/preferences' : from} replace />
 
   const submit = async (e) => {
     e.preventDefault()
     setBusy(true)
     setError('')
+    setJustRegistered(true)
     try {
       await register(username.trim(), mail.trim(), password)
-      navigate(from, { replace: true })
     } catch (err) {
+      setJustRegistered(false)
       setError(errorMessage(err))
       setBusy(false)
     }

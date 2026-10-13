@@ -5,7 +5,27 @@ function httpError(status, message) {
   return Object.assign(new Error(message), { status });
 }
 
+function bearerToken(req) {
+  const [scheme, token] = (req.headers.authorization || '').split(' ');
+  return scheme === 'Bearer' && token ? token : null;
+}
+
+// Identifie l'utilisateur quand un token valide est fourni, sinon continue en anonyme (jamais d'erreur)
+async function attachUser(req, res, next) {
+  try {
+    const token = bearerToken(req);
+    if (token) {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = (await User.findById(payload.sub)) || undefined;
+    }
+  } catch {
+    /* token absent ou invalide : visiteur anonyme */
+  }
+  next();
+}
+
 async function requireAuth(req, res, next) {
+  if (req.user) return next();
   try {
     const header = req.headers.authorization || '';
     const [scheme, token] = header.split(' ');
@@ -36,4 +56,4 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { requireAuth, requireRole, httpError };
+module.exports = { requireAuth, requireRole, attachUser, httpError };
