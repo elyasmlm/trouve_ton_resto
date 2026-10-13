@@ -1,35 +1,77 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Route, Routes } from 'react-router-dom'
+import Layout from './components/Layout.jsx'
+import RequireAuth from './auth/RequireAuth.jsx'
+import Home from './pages/Home.jsx'
+import Login from './pages/Login.jsx'
+import Register from './pages/Register.jsx'
+import Account from './pages/Account.jsx'
+import ComingSoon from './pages/ComingSoon.jsx'
+import NotFound from './pages/NotFound.jsx'
+import { BellIcon, ListIcon, PlusIcon, SearchIcon } from './components/Icons.jsx'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Home />} />
+        <Route
+          path="recherche"
+          element={
+            <ComingSoon
+              icon={SearchIcon}
+              title="La recherche arrive"
+              text="Bientôt, tu pourras filtrer par cuisine, prix, distance et même par ce qui est ouvert maintenant."
+            />
+          }
+        />
+        <Route
+          path="ajouter"
+          element={
+            <RequireAuth>
+              <ComingSoon
+                icon={PlusIcon}
+                title="Ajouter un resto"
+                text="Tu connais une bonne adresse qui n’est pas encore là ? Bientôt, tu pourras la partager en deux minutes."
+              />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="listes"
+          element={
+            <RequireAuth>
+              <ComingSoon
+                icon={ListIcon}
+                title="Tes listes"
+                text="Ta wishlist, les restos déjà testés et tes listes perso, à partager avec tes potes."
+              />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="notifications"
+          element={
+            <RequireAuth>
+              <ComingSoon
+                icon={BellIcon}
+                title="Notifications"
+                text="Tu seras prévenu ici quand un resto répond à ton avis ou qu’un badge se débloque."
+              />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="compte"
+          element={
+            <RequireAuth>
+              <Account />
+            </RequireAuth>
+          }
+        />
+        <Route path="connexion" element={<Login />} />
+        <Route path="inscription" element={<Register />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
   )
 }
-
-export default App
