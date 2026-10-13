@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 
 const ROLES = { user: 'Membre', premium: 'Membre premium', restaurateur: 'Restaurateur', admin: 'Admin' }
@@ -36,6 +36,9 @@ export default function Account() {
           <span>Badges</span>
         </div>
       </div>
+      <Link to="/preferences" className="btn btn--primary btn--block" style={{ marginBottom: 12 }}>
+        Modifier mes préférences
+      </Link>
       <button type="button" className="btn btn--secondary btn--block" onClick={leave}>
         Me déconnecter
       </button>

@@ -56,14 +56,16 @@ export default function AuthProvider({ children }) {
     setTimeout(() => setJustLoggedOut(false), 1000)
   }, [])
 
+  const updateUser = useCallback((next) => setUser(next), [])
+
   const continueAsGuest = useCallback(() => {
     storage.set(GUEST_KEY, '1')
     setGuest(true)
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, guest, justLoggedOut, login, register, logout, continueAsGuest }),
-    [user, loading, guest, justLoggedOut, login, register, logout, continueAsGuest],
+    () => ({ user, loading, guest, justLoggedOut, login, register, logout, updateUser, continueAsGuest }),
+    [user, loading, guest, justLoggedOut, login, register, logout, updateUser, continueAsGuest],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

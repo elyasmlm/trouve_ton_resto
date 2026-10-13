@@ -5,7 +5,36 @@ const { isOpenAt } = require('../utils/openHours');
 const { httpError } = require('../middleware/auth');
 
 const OPEN_FILTER_CAP = 1000;
-const SORTS = ['distance', 'rating', 'recent', 'name', 'price_asc', 'price_desc'];
+const SORTS = ['for_you', 'distance', 'rating', 'recent', 'name', 'price_asc', 'price_desc'];
+
+/**
+ * Score « For You » : goûts de l'utilisateur (cuisines, budget, tags), vérification, note moyenne,
+ * et proximité si une position est fournie. Un resto sponsorisé n'est remonté que s'il correspond
+ * à au moins un goût : les résultats sponsorisés restent pertinents.
+ */
+function forYouScore(user, hasGeo) {
+  const prefs = (user && user.preferences) || {};
+  const cuisines = [...(prefs.cuisines || [])];
+  const prices = [...(prefs.price_ranges || [])];
+  const tags = [...(prefs.tags || [])];
+
+  const match = {
+    $add: [
+      { $multiply: [3, { $min: [1, { $size: { $setIntersection: [{ $ifNull: ['$cuisines', []] }, cuisines] } }] }] },
+      { $cond: [{ $in: [{ $ifNull: ['$price_range', ''] }, prices] }, 1, 0] },
+      { $min: [3, { $size: { $setIntersection: [{ $map: { input: { $ifNull: ['$tags', []] }, in: { $toLower: '$$this' } } }, tags] } }] },
+    ],
+  };
+  return {
+    $add: [
+      match,
+      { $cond: [{ $and: [{ $eq: ['$sponsored', true] }, { $gt: [match, 0] }] }, 1.5, 0] },
+      { $cond: [{ $eq: ['$verified', true] }, 1, 0] },
+      { $multiply: [{ $ifNull: ['$rating_avg', 0] }, 0.4] },
+      hasGeo ? { $multiply: [-0.12, { $min: [{ $divide: [{ $ifNull: ['$distance', 0] }, 1000] }, 25] }] } : 0,
+    ],
+  };
+}
 
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const list = (v) =>
@@ -40,7 +69,7 @@ async function resolveCuisines(values) {
  * meal, tags, vegan, halal, verified, sponsored, minRating (0-5),
  * lat + lng (+ radius en km) pour la proximité, open (now | date ISO), sort, page, limit.
  */
-async function searchRestos(query) {
+async function searchRestos(query, user) {
   const filter = {};
 
   const q = typeof query.q === 'string' ? query.q.trim().slice(0, 100) : '';
@@ -61,7 +90,7 @@ async function searchRestos(query) {
   const meals = list(query.meal);
   if (meals.length) filter.meal_types = { $in: meals };
   const tags = list(query.tags);
-  if (tags.length) filter.tags = { $in: tags };
+  if (tags.length) filter.tags = { $in: tags.map((t) => new RegExp(`^${escapeRegex(t)}$`, 'i')) };
   for (const [param, field] of [['vegan', 'vegan'], ['halal', 'halal_certificate'], ['verified', 'verified'], ['sponsored', 'sponsored']]) {
     const b = bool(query[param]);
     if (b !== undefined) filter[field] = b;
@@ -108,6 +137,7 @@ async function searchRestos(query) {
     },
   });
   if (minRating !== undefined) pipeline.push({ $match: { rating_avg: { $gte: minRating } } });
+  if (sort === 'for_you') pipeline.push({ $addFields: { for_you_score: forYouScore(user, hasGeo) } });
   pipeline.push(
     { $lookup: { from: 'open_hours', localField: '_id', foreignField: 'resto', as: '_hours' } },
     { $addFields: { _hours: { $first: '$_hours' } } }
@@ -120,11 +150,12 @@ async function searchRestos(query) {
     name: { name: 1 },
     price_asc: { price_level: 1 },
     price_desc: { price_level: -1 },
+    for_you: { for_you_score: -1 },
   }[sort];
   pipeline.push({ $sort: { ...sortStage, _id: 1 } });
 
   const view = (r) => {
-    const { _hours, price_level, ...resto } = r;
+    const { _hours, price_level, for_you_score, ...resto } = r;
     resto.is_open = isOpenAt(_hours, openAt || new Date());
     if (resto.rating_avg != null) resto.rating_avg = Math.round(resto.rating_avg * 10) / 10;
     return resto;

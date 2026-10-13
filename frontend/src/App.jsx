@@ -5,6 +5,7 @@ import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Account from './pages/Account.jsx'
+import Preferences from './pages/Preferences.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import NotFound from './pages/NotFound.jsx'
 import { BellIcon, ListIcon, PlusIcon, SearchIcon } from './components/Icons.jsx'
@@ -65,6 +66,14 @@ export default function App() {
           element={
             <RequireAuth>
               <Account />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="preferences"
+          element={
+            <RequireAuth>
+              <Preferences />
             </RequireAuth>
           }
         />

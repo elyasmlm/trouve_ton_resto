@@ -59,7 +59,7 @@ router.use('/:id/ratings', ratingRoutes);
 
 router.get('/', async (req, res, next) => {
   try {
-    res.json(await searchRestos(req.query));
+    res.json(await searchRestos(req.query, req.user));
   } catch (err) {
     next(err);
   }
