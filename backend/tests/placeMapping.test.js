@@ -33,7 +33,9 @@ describe('fromCategories', () => {
 
   it('detects vegan and vegetarian places', () => {
     expect(fromCategories(['vegan_restaurant'])).toMatchObject({ cuisines: ['Végétarienne'], vegan: true });
-    expect(fromCategories(['vegetarian_restaurant']).vegan).toBe(false);
+    expect(fromCategories(['vegetarian_restaurant'])).toMatchObject({ cuisines: ['Végétarienne'], vegan: true }); // une option végé suffit à la règle de l'appli
+    expect(fromCategories(['halal_restaurant'])).toMatchObject({ halal: true, tags: ['halal'] });
+    expect(fromCategories(['french_restaurant'])).toMatchObject({ vegan: false, halal: false });
   });
 
   it('does not match words inside other words', () => {
@@ -148,7 +150,7 @@ describe('fromOsmTags', () => {
     expect(r.emails).toEqual(['contact@procope.com']);
     expect(r.cuisines).toEqual(expect.arrayContaining(['Française', 'Italienne']));
     expect(r.tags).toEqual(expect.arrayContaining(['pizza', 'terrasse', 'à emporter', 'accessible PMR', 'wifi', 'végétarien']));
-    expect(r.vegan).toBe(false);
+    expect(r.vegan).toBe(true); // diet:vegetarian=yes
     expect(r.halal).toBe(true);
     expect(r.hours).toMatchObject({ timezone: 'Europe/Paris', text: 'Mo-Su 11:30-24:00' });
     expect(r.hours.weekly.thu).toEqual([{ open: '11:30', close: '00:00' }]);

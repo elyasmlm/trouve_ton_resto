@@ -6,6 +6,7 @@ const KNOWN = [
   [/already used/i, 'Ce pseudo ou ce mail est déjà pris.'],
   [/invalid credentials/i, 'Mail ou mot de passe incorrect.'],
   [/mail and password are required/i, 'Renseigne ton mail et ton mot de passe.'],
+  [/halal or offer a vegetarian option/i, 'Un resto doit être halal ou proposer une option végétarienne.'],
   [/social links must be/i, 'Les liens Instagram et Facebook doivent commencer par http:// ou https://.'],
   [/validation failed/i, 'Vérifie les champs obligatoires : le nom et l’adresse complète (rue, code postal, ville, région).'],
   [/website must be/i, 'Le site web doit commencer par http:// ou https://.'],

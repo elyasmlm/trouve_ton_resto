@@ -108,6 +108,7 @@ function shapeLocal(doc) {
     cuisines: doc.cuisines,
     tags: doc.tags,
     vegan: doc.vegan,
+    halal: doc.halal,
     kind: doc.category || doc.kind,
     sources: doc.datasets,
     confidence: doc.confidence,

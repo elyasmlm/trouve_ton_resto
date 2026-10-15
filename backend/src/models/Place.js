@@ -13,7 +13,8 @@ const placeSchema = new mongoose.Schema(
     category: String, // catégorie précise (ex. japanese_restaurant)
     cuisines: [String],
     tags: [String],
-    vegan: { type: Boolean, default: false },
+    vegan: { type: Boolean, default: false }, // propose une option végé (végétarien ou vegan)
+    halal: { type: Boolean, default: false },
     street: String,
     zip: String,
     city: String,

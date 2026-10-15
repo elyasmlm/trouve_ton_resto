@@ -29,6 +29,15 @@ function toGeo(input) {
   return { type: 'Point', coordinates: coordinates.map(Number) };
 }
 
+// Règle de l'appli : chaque resto est halal, ou à défaut propose au moins une option végétarienne.
+// (`vegan` = « options végé / vegan », `halal_certificate` = « halal ».)
+const DIET_RULE = 'A resto must be halal or offer a vegetarian option';
+function checkDiet(resto) {
+  if (!resto.halal_certificate && !resto.vegan) throw httpError(400, DIET_RULE);
+}
+// modifier la fiche (hors champs de modération réservés aux admins) oblige à respecter la règle
+const touchesContent = (body) => EDITABLE.some((key) => body[key] !== undefined) || body.location !== undefined || body.geo !== undefined;
+
 function applyBody(resto, body, isAdmin) {
   for (const key of isAdmin ? [...EDITABLE, ...ADMIN_ONLY] : EDITABLE) {
     if (body[key] !== undefined) resto.set(key, body[key]);
@@ -93,6 +102,7 @@ router.post('/', requireAuth, async (req, res, next) => {
     }
     const resto = new Resto({ added_by: req.user._id });
     applyBody(resto, req.body || {}, req.user.role === 'admin');
+    checkDiet(resto);
     await resto.save();
     res.status(201).json({ resto });
   } catch (err) {
@@ -103,6 +113,7 @@ router.post('/', requireAuth, async (req, res, next) => {
 router.patch('/:id', requireAuth, loadResto, requireEditor, async (req, res, next) => {
   try {
     applyBody(req.resto, req.body || {}, req.user.role === 'admin');
+    if (touchesContent(req.body || {})) checkDiet(req.resto);
     await req.resto.save();
     res.json({ resto: req.resto });
   } catch (err) {

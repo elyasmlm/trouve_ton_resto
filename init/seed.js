@@ -70,22 +70,22 @@ const template = { mon: [], tue: weekdays, wed: weekdays, thu: weekdays, fri: we
   {
     name: "Le Bistrot d'Exemple",
     street: "12 rue de Rivoli", zip: "75001", coords: [2.3412, 48.8606],
-    cuisines: ["Française"], price: "€€", tags: ["terrasse", "bistrot"], meals: ["lunch", "dinner"], verified: true, sponsored: false
+    cuisines: ["Française"], price: "€€", tags: ["terrasse", "bistrot"], meals: ["lunch", "dinner"], verified: true, sponsored: false, veggie: true
   },
   {
     name: "Pizzeria Test",
     street: "5 rue Oberkampf", zip: "75011", coords: [2.3790, 48.8650],
-    cuisines: ["Italienne"], price: "€", tags: ["pizza", "à emporter"], meals: ["lunch", "dinner"], verified: true, sponsored: true
+    cuisines: ["Italienne"], price: "€", tags: ["pizza", "à emporter"], meals: ["lunch", "dinner"], verified: true, sponsored: true, veggie: true
   },
   {
     name: "Sushi Démo",
     street: "30 rue Sainte-Anne", zip: "75002", coords: [2.3350, 48.8660],
-    cuisines: ["Japonaise"], price: "€€€", tags: ["sushi", "ramen"], meals: ["dinner"], verified: false, sponsored: false
+    cuisines: ["Japonaise"], price: "€€€", tags: ["sushi", "ramen"], meals: ["dinner"], verified: false, sponsored: false, veggie: true
   },
   {
     name: "Mezzé Exemple",
     street: "8 rue Mouffetard", zip: "75005", coords: [2.3500, 48.8420],
-    cuisines: ["Libanaise", "Végétarienne"], price: "€€", tags: ["mezzé", "végétarien"], meals: ["lunch", "dinner"], verified: true, sponsored: false
+    cuisines: ["Libanaise", "Végétarienne"], price: "€€", tags: ["mezzé", "végétarien"], meals: ["lunch", "dinner"], verified: true, sponsored: false, veggie: true, halal: true
   }
 ].forEach((r) => {
   db.restos.updateOne(
@@ -100,8 +100,9 @@ const template = { mon: [], tue: weekdays, wed: weekdays, thu: weekdays, fri: we
         tags: r.tags,
         verified: r.verified,
         sponsored: r.sponsored,
-        vegan: r.cuisines.includes("Végétarienne"),
-        halal_certificate: false,
+        // règle de l'appli : chaque resto est halal ou propose une option végé
+        vegan: r.veggie === true || r.cuisines.includes("Végétarienne"),
+        halal_certificate: r.halal === true,
         status: "open",
         updated_at: now
       },

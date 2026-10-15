@@ -135,7 +135,7 @@ describe('GET /api/restos/:id and /api/cuisines', () => {
 
 describe('write access', () => {
   let created;
-  const payload = { name: 'Nouveau', location: address('Paris'), geo: { lat: 48.85, lng: 2.35 }, price_range: '€' };
+  const payload = { name: 'Nouveau', location: address('Paris'), geo: { lat: 48.85, lng: 2.35 }, price_range: '€', vegan: true };
 
   it('requires authentication to add a resto', async () => {
     expect((await request(app).post('/api/restos').send(payload)).status).toBe(401);
@@ -196,7 +196,7 @@ describe('write access', () => {
   });
 });
 describe('free-text fields and daily limit', () => {
-  const base = { name: 'Chez Test', location: address('Paris'), price_range: '€' };
+  const base = { name: 'Chez Test', location: address('Paris'), price_range: '€', vegan: true };
   let user;
 
   beforeAll(async () => {
@@ -229,7 +229,7 @@ describe('free-text fields and daily limit', () => {
 });
 
 describe('social links', () => {
-  const base = { name: 'Chez Liens', location: address('Paris') };
+  const base = { name: 'Chez Liens', location: address('Paris'), halal_certificate: true };
   let user;
   beforeAll(async () => {
     user = await signup('lena');
@@ -245,5 +245,49 @@ describe('social links', () => {
     for (const instagram of ['javascript:alert(1)', 'data:text/html,x', '@chezliens', 'ftp://x.fr', 'https://' + 'x'.repeat(300)]) {
       expect((await request(app).post('/api/restos').set(as(user)).send({ ...base, social_networks: { instagram } })).status).toBe(400);
     }
+  });
+});
+
+describe('halal or vegetarian rule', () => {
+  const base = { name: 'Chez Règle', location: address('Paris') };
+  let user;
+
+  beforeAll(async () => {
+    user = await signup('rulefan');
+  });
+
+  it('refuses a resto that is neither halal nor vegetarian-friendly', async () => {
+    for (const extra of [{}, { vegan: false, halal_certificate: false }, { vegan: false }, { halal_certificate: false }]) {
+      const res = await request(app).post('/api/restos').set(as(user)).send({ ...base, ...extra });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/halal or offer a vegetarian option/);
+    }
+  });
+
+  it('accepts a halal resto, a vegetarian-friendly one, or both', async () => {
+    for (const extra of [{ halal_certificate: true }, { vegan: true }, { halal_certificate: true, vegan: true }]) {
+      expect((await request(app).post('/api/restos').set(as(user)).send({ ...base, ...extra })).status).toBe(201);
+    }
+  });
+
+  it('also applies to admins when they add a resto', async () => {
+    expect((await request(app).post('/api/restos').set(as(tokens.admin)).send(base)).status).toBe(400);
+  });
+
+  it('keeps applying on updates: the last option cannot be removed, unrelated edits keep working', async () => {
+    const created = (await request(app).post('/api/restos').set(as(user)).send({ ...base, halal_certificate: true })).body.resto;
+    const url = `/api/restos/${created._id}`;
+    expect((await request(app).patch(url).set(as(user)).send({ halal_certificate: false })).status).toBe(400);
+    expect((await request(app).patch(url).set(as(user)).send({ name: 'Renommé' })).status).toBe(200);
+    expect((await request(app).patch(url).set(as(user)).send({ halal_certificate: false, vegan: true })).status).toBe(200);
+    expect((await request(app).patch(url).set(as(user)).send({ vegan: false })).status).toBe(400);
+  });
+
+  it('does not block moderation of older restos, but asks to fix them when their content is edited', async () => {
+    const legacy = await Resto.create({ name: 'Ancien resto', location: address('Paris') }); // créé avant la règle : ni halal ni végé
+    const url = `/api/restos/${legacy.id}`;
+    expect((await request(app).patch(url).set(as(tokens.admin)).send({ verified: true })).status).toBe(200);
+    expect((await request(app).patch(url).set(as(tokens.admin)).send({ name: 'Ancien resto 2' })).status).toBe(400);
+    expect((await request(app).patch(url).set(as(tokens.admin)).send({ name: 'Ancien resto 2', vegan: true })).status).toBe(200);
   });
 });

@@ -33,6 +33,7 @@ function toPlaceDoc(row, release) {
     cuisines: mapped.cuisines,
     tags: mapped.tags,
     vegan: mapped.vegan,
+    halal: mapped.halal,
     street: (row.street || '').trim() || undefined,
     zip: (row.zip || '').trim() || undefined,
     city: city || undefined,

@@ -578,3 +578,7 @@ button:disabled { cursor: not-allowed; }
 .hours li span:first-child { font-weight: 600; color: var(--brown-deep); }
 .credits { color: var(--ink-soft); font-size: 0.78rem; line-height: 1.4; }
 .credits a { color: var(--brown); }
+
+.diet { padding: 14px; border: 2px dashed var(--brown); border-radius: var(--radius-sm); background: var(--cream); }
+.diet:has(input[aria-invalid='true']) { border-color: var(--danger); border-style: solid; }
+.diet input[aria-invalid='true'] { outline: 2px solid var(--danger); }

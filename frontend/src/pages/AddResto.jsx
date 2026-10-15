@@ -63,6 +63,7 @@ export default function AddResto() {
   const [useHours, setUseHours] = useState(true)
   const [pendingCuisines, setPendingCuisines] = useState([]) // noms de cuisines en attente du chargement de la liste
   const [note, setNote] = useState('')
+  const [dietError, setDietError] = useState(false)
   const [photos, setPhotos] = useState([])
   const [cuisines, setCuisines] = useState([])
   const [dupes, setDupes] = useState([])
@@ -72,7 +73,10 @@ export default function AddResto() {
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState(null)
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
+  const set = (key) => (e) => {
+    setForm((f) => ({ ...f, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
+    if (key === 'vegan' || key === 'halal') setDietError(false)
+  }
 
   useEffect(() => {
     api.get('/cuisines').then((res) => setCuisines(res.data.items)).catch(() => {})
@@ -151,6 +155,12 @@ export default function AddResto() {
 
   const submit = async (e) => {
     e.preventDefault()
+    // règle de l'appli : un resto est halal, ou propose au moins une option végé
+    if (!target && !form.halal && !form.vegan) {
+      setDietError(true)
+      document.getElementById('diet')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
     setBusy(true)
     setError('')
     let resto = target
@@ -208,6 +218,7 @@ export default function AddResto() {
     setHours(null)
     setPendingCuisines([])
     setNote('')
+    setDietError(false)
     setPhase('search')
   }
 
@@ -376,16 +387,28 @@ export default function AddResto() {
                 </li>
               ))}
             </ul>
-            <div className="manage" style={{ marginTop: 12 }}>
+          </fieldset>
+
+          <fieldset className="fieldset diet" id="diet" aria-describedby="diet-help">
+            <legend>Halal ou option végé (obligatoire)</legend>
+            <p id="diet-help" className="field__hint">
+              Chaque resto est halal ou propose au moins une option végétarienne. Coche ce qui correspond.
+            </p>
+            <div className="manage">
               <label className="switch">
-                <input type="checkbox" checked={form.vegan} onChange={set('vegan')} />
-                <span>Options végé / vegan</span>
-              </label>
-              <label className="switch">
-                <input type="checkbox" checked={form.halal} onChange={set('halal')} />
+                <input type="checkbox" checked={form.halal} onChange={set('halal')} aria-invalid={dietError || undefined} />
                 <span>Halal</span>
               </label>
+              <label className="switch">
+                <input type="checkbox" checked={form.vegan} onChange={set('vegan')} aria-invalid={dietError || undefined} />
+                <span>Option végétarienne / vegan</span>
+              </label>
             </div>
+            {dietError && (
+              <p className="alert" role="alert">
+                Un resto doit être halal ou proposer une option végétarienne. Coche au moins l’une des deux cases.
+              </p>
+            )}
           </fieldset>
 
           <fieldset className="fieldset">

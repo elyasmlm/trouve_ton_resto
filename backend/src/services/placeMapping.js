@@ -61,6 +61,7 @@ const TAG_WORDS = {
   'fruits de mer': ['seafood', 'oyster'],
   végétarien: ['vegetarian'],
   végan: ['vegan'],
+  halal: ['halal'],
 };
 
 const hasWord = (text, word) => new RegExp(`(^| )${escapeRegex(word)}( |$)`).test(text);
@@ -76,7 +77,8 @@ function fromCategories(categories) {
 
   const cuisines = Object.entries(CUISINE_WORDS).filter(([, words]) => matches(words)).map(([name]) => name);
   const tags = Object.entries(TAG_WORDS).filter(([, words]) => matches(words)).map(([tag]) => tag);
-  return { cuisines, tags, vegan: matches(['vegan']) };
+  // `vegan` = « propose une option végé » (végétarien ou vegan) ; `halal` = restaurant halal
+  return { cuisines, tags, vegan: matches(['vegan', 'vegetarian']), halal: matches(['halal']) };
 }
 
 // ---------- réseaux sociaux, sites, téléphones ----------
@@ -241,8 +243,8 @@ function fromOsmTags(tags, country) {
     socials,
     cuisines: cuisine.cuisines,
     tags: [...new Set([...cuisine.tags, ...extra])],
-    vegan: yes(t['diet:vegan']) || cuisine.vegan,
-    halal: yes(t['diet:halal']),
+    vegan: yes(t['diet:vegan']) || yes(t['diet:vegetarian']) || cuisine.vegan,
+    halal: yes(t['diet:halal']) || cuisine.halal,
     hours: hours ? { timezone: timezoneFor(country), weekly: hours.weekly, text: hours.text } : null,
   };
 }
