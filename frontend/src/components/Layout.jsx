@@ -43,11 +43,12 @@ function SearchBar() {
 
 function Header() {
   const { user } = useAuth()
+  const onSearchPage = useLocation().pathname === '/recherche' // la page a sa propre barre, avec suggestions
   return (
     <header className="header">
       <div className="header__inner">
         <Brand />
-        <SearchBar />
+        {onSearchPage ? <div className="search" aria-hidden="true" /> : <SearchBar />}
         <div className="header__actions">
           <NavLink to="/listes" className="icon-btn header__desktop" aria-label="Mes listes">
             <ListIcon />

@@ -615,3 +615,56 @@ button:disabled { cursor: not-allowed; }
 
 /* une fenêtre ouverte depuis le fil sombre ne doit pas en hériter la couleur ni l'ombre du texte */
 .sheet { color: var(--ink); text-shadow: none; }
+
+/* ---------- recherche ---------- */
+.search-head { display: grid; gap: 8px; margin-bottom: 14px; }
+.search-head h1 { font-size: clamp(1.5rem, 5vw, 2rem); color: var(--brown-deep); overflow-wrap: anywhere; }
+.sbar { position: relative; }
+.sbar > svg { position: absolute; left: 14px; top: 26px; translate: 0 -50%; width: 20px; height: 20px; color: var(--ink-soft); pointer-events: none; }
+.sbar input { width: 100%; min-height: 52px; padding: 0 16px 0 44px; border-radius: 999px; border: 2px solid var(--brown); background: #fff; font: inherit; font-size: 1rem; color: var(--ink); }
+.sbar input:focus { outline: none; border-color: var(--brown-deep); box-shadow: 0 0 0 4px var(--yellow); }
+.sbar__list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px; list-style: none; background: var(--page); border: 2px solid var(--brown-deep); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); max-height: 320px; overflow-y: auto; }
+.sbar__list li { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--brown-deep); }
+.sbar__list li small { color: var(--ink-soft); }
+.sbar__list li em { margin-left: auto; font-style: normal; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+.sbar__list li:hover, .sbar__list li[aria-selected='true'] { background: var(--yellow-soft); }
+.search-tools { align-items: center; }
+.search-tools .admin__badge { min-width: 22px; height: 22px; background: var(--brown-deep); }
+.sortsel { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: var(--brown); }
+.sortsel select { min-height: 40px; padding: 0 12px; border-radius: 999px; border: 2px solid var(--brown); background: transparent; font: inherit; font-size: 0.92rem; font-weight: 600; color: var(--brown-deep); }
+.viewtoggle { display: inline-flex; margin-left: auto; border: 2px solid var(--brown); border-radius: 999px; overflow: hidden; }
+.viewtoggle button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; background: transparent; font: inherit; font-size: 0.92rem; font-weight: 600; color: var(--brown-deep); cursor: pointer; }
+.viewtoggle button svg { width: 17px; height: 17px; }
+.viewtoggle button[aria-pressed='true'] { background: var(--yellow); box-shadow: inset 0 -2px 0 var(--brown-deep); }
+.active-chips { margin-bottom: 14px; align-items: center; }
+.search-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.search-count { margin: 0 0 12px; color: var(--ink-soft); font-weight: 600; }
+.search-feed.is-stale { opacity: 0.55; transition: opacity 0.2s; }
+.fgroup { border: 0; margin: 0 0 18px; padding: 0; min-width: 0; }
+.fgroup legend { padding: 0; margin-bottom: 8px; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brown); }
+.search-filters .fgroup:last-child { margin-bottom: 0; }
+
+.searchmap { position: relative; scroll-margin: 70px 0 100px; border-radius: var(--radius); overflow: hidden; border: 2px solid var(--brown-deep); box-shadow: var(--shadow); background: var(--taupe-soft); }
+.searchmap__map { height: min(68dvh, 620px); min-height: 380px; width: 100%; z-index: 0; font: inherit; }
+.searchmap__status { position: absolute; z-index: 400; top: 10px; left: 50%; translate: -50% 0; margin: 0; padding: 5px 14px; border-radius: 999px; background: var(--page); border: 1.5px solid var(--brown-deep); box-shadow: var(--shadow-sm); font-size: 0.84rem; font-weight: 600; color: var(--brown-deep); white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.pin-wrap { background: none; border: 0; }
+.pin { display: block; width: 26px; height: 26px; margin: 2px 2px 0; border-radius: 50% 50% 50% 0; rotate: -45deg; background: var(--yellow); border: 3px solid var(--brown-deep); box-shadow: 0 3px 5px rgb(67 45 37 / 35%); transition: scale 0.15s; }
+.pin--sponso { background: #8a5cc2; }
+.pin--on { background: var(--brown-deep); scale: 1.25; }
+.pin--sponso.pin--on { background: #5d3796; }
+.leaflet-container:focus-visible, .leaflet-marker-icon:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.mapcard { position: absolute; z-index: 500; left: 10px; right: 10px; bottom: 10px; max-width: 420px; padding: 14px 16px 16px; background: var(--page); border: 2px solid var(--brown-deep); border-radius: var(--radius); box-shadow: var(--shadow-lg); display: grid; gap: 6px; animation: sheet-up 0.25s var(--ease); }
+.mapcard h3 { font-size: 1.2rem; color: var(--gold); font-weight: 800; padding-right: 36px; }
+.mapcard__meta { margin: 0; font-size: 0.9rem; color: var(--ink-soft); }
+.mapcard__close { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--brown); background: transparent; font: inherit; color: var(--brown-deep); cursor: pointer; }
+.mapcard .actions { margin-top: 6px; }
+.mapcard .actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 11px; border: 2px solid var(--brown); background: transparent; font: inherit; font-weight: 700; font-size: 0.9rem; color: var(--brown-deep); cursor: pointer; }
+.mapcard .actions button svg { width: 19px; height: 19px; }
+.mapcard .actions a:not(:first-child) { border: 2px solid var(--brown); color: var(--brown-deep); }
+@media (min-width: 880px) {
+  .search-layout { grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
+  .search-filters { max-height: calc(100dvh - 110px); overflow-y: auto; }
+  .search-page .feed { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .mapcard { left: 14px; bottom: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .pin, .mapcard { transition: none; animation: none; } }
