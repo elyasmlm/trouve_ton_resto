@@ -6,6 +6,7 @@ import { MapIcon, MapPinIcon, SlidersIcon } from '../components/Icons.jsx'
 import Loader from '../components/Loader.jsx'
 import SearchBar from '../components/SearchBar.jsx'
 import SearchList from '../components/SearchList.jsx'
+import { useDragScroll } from '../hooks/useDragScroll.js'
 import { GEO_TEXT, useGeolocation } from '../hooks/useGeolocation.js'
 import { activeCount, EMPTY_FILTERS, MEALS, PRICES, readFilters, writeFilters } from '../utils/searchParams.js'
 
@@ -34,6 +35,7 @@ export default function Search() {
   const geo = useGeolocation()
   const coords = geo.status === 'granted' ? geo.coords : null
   const dialog = useRef(null)
+  const chips = useDragScroll()
   const [cuisineNames, setCuisineNames] = useState({})
   const [trends, setTrends] = useState({ tags: [], cuisines: [] })
   const [status, setStatus] = useState('')
@@ -84,7 +86,7 @@ export default function Search() {
           </button>
         </div>
 
-        <div className="sp__chips" role="group" aria-label="Filtres rapides">
+        <div className="sp__chips" ref={chips} role="group" aria-label="Filtres rapides">
           {coords ? (
             <Chip on onClick={geo.clear}>
               <MapPinIcon /> Autour de moi

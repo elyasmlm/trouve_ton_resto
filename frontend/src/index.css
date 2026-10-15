@@ -629,6 +629,7 @@ html.search-mode .footer { display: none; }
 .sp__filters b { position: absolute; top: -5px; right: -5px; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 11px; background: var(--brown-deep); color: #fff; font-size: 0.78rem; display: grid; place-items: center; }
 .sp__chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -12px; padding: 2px 12px 4px; }
 .sp__chips::-webkit-scrollbar { display: none; }
+@media (hover: hover) { .sp__chips { cursor: grab; } .sp__chips.is-dragging { cursor: grabbing; user-select: none; } .sp__chips.is-dragging .sp__chip { pointer-events: none; } }
 .sp__chip { flex: none; min-height: 38px; background: var(--page); }
 .sp__chip[aria-pressed='true'] { background: var(--yellow); }
 .sp__note, .sp__status { margin: 0; font-size: 0.84rem; font-weight: 600; color: var(--ink-soft); }
