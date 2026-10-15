@@ -20,6 +20,7 @@ export function readFilters(params) {
   return {
     q: params.get('q') || '',
     cuisines: list(params.get('cuisine')),
+    tags: list(params.get('tag')),
     price: list(params.get('price')),
     meals: list(params.get('meal')),
     vegan: params.get('vegan') === '1',
@@ -37,6 +38,7 @@ export function writeFilters(f) {
   const p = new URLSearchParams()
   if (f.q) p.set('q', f.q)
   if (f.cuisines.length) p.set('cuisine', f.cuisines.join(','))
+  if (f.tags.length) p.set('tag', f.tags.join(','))
   if (f.price.length) p.set('price', f.price.join(','))
   if (f.meals.length) p.set('meal', f.meals.join(','))
   if (f.vegan) p.set('vegan', '1')
@@ -55,6 +57,7 @@ export function apiParams(f, coords) {
   const p = {}
   if (f.q) p.q = f.q
   if (f.cuisines.length) p.cuisine = f.cuisines.join(',')
+  if (f.tags.length) p.tags = f.tags.join(',')
   if (f.price.length) p.price = f.price.join(',')
   if (f.meals.length) p.meal = f.meals.join(',')
   if (f.vegan) p.vegan = 'true'
@@ -73,6 +76,6 @@ export function apiParams(f, coords) {
 
 // nombre de filtres actifs (hors texte, tri et vue)
 export const activeCount = (f) =>
-  f.cuisines.length + f.price.length + f.meals.length + [f.vegan, f.halal, f.verified, f.open].filter(Boolean).length + (f.minRating ? 1 : 0) + (f.radius ? 1 : 0)
+  f.cuisines.length + f.tags.length + f.price.length + f.meals.length + [f.vegan, f.halal, f.verified, f.open].filter(Boolean).length + (f.minRating ? 1 : 0) + (f.radius ? 1 : 0)
 
 export const EMPTY_FILTERS = readFilters(new URLSearchParams())

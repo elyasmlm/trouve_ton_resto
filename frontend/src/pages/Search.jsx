@@ -1,199 +1,158 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import api from '../api/client.js'
 import FilterPanel from '../components/FilterPanel.jsx'
 import { MapIcon, MapPinIcon, SlidersIcon } from '../components/Icons.jsx'
 import Loader from '../components/Loader.jsx'
-import RestoCard from '../components/RestoCard.jsx'
 import SearchBar from '../components/SearchBar.jsx'
+import SearchList from '../components/SearchList.jsx'
 import { GEO_TEXT, useGeolocation } from '../hooks/useGeolocation.js'
-import { useMediaQuery } from '../hooks/useMediaQuery.js'
-import { useSearchResults } from '../hooks/useSearchResults.js'
-import { activeCount, EMPTY_FILTERS, MEALS, PRICES, readFilters, SORTS, writeFilters } from '../utils/searchParams.js'
+import { activeCount, EMPTY_FILTERS, MEALS, PRICES, readFilters, writeFilters } from '../utils/searchParams.js'
 
 const SearchMap = lazy(() => import('../components/SearchMap.jsx'))
+const RowsIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
+  </svg>
+)
+const without = (arr, v) => arr.filter((x) => x !== v)
+const uniq = (arr) => [...new Set(arr)]
 
-// Les filtres actifs, retirables un par un
-function activeChips(f, set) {
-  const chips = []
-  f.cuisines.forEach((c) => chips.push([`c-${c}`, c, () => set({ cuisines: f.cuisines.filter((x) => x !== c) })]))
-  f.price.forEach((p) => chips.push([`p-${p}`, PRICES.find(([v]) => v === p)?.[1] || p, () => set({ price: f.price.filter((x) => x !== p) })]))
-  f.meals.forEach((m) => chips.push([`m-${m}`, MEALS.find(([v]) => v === m)?.[1] || m, () => set({ meals: f.meals.filter((x) => x !== m) })]))
-  if (f.halal) chips.push(['halal', 'Halal', () => set({ halal: false })])
-  if (f.vegan) chips.push(['vegan', 'Option végé', () => set({ vegan: false })])
-  if (f.verified) chips.push(['verified', 'Vérifiés', () => set({ verified: false })])
-  if (f.open) chips.push(['open', 'Ouvert maintenant', () => set({ open: false })])
-  if (f.minRating) chips.push(['rating', `★ ${f.minRating}+`, () => set({ minRating: 0 })])
-  if (f.radius) chips.push(['radius', `${f.radius} km`, () => set({ radius: null })])
-  return chips
+function Chip({ on, onClick, children, tag, removable }) {
+  return (
+    <button type="button" className={`pill sp__chip ${tag ? 'pill--tag' : ''}`} aria-pressed={on} onClick={onClick}>
+      {children}
+      {removable && <span aria-hidden="true"> ✕</span>}
+    </button>
+  )
 }
 
 export default function Search() {
   const [params, setParams] = useSearchParams()
   const filters = useMemo(() => readFilters(params), [params])
+  const location = useLocation()
   const geo = useGeolocation()
   const coords = geo.status === 'granted' ? geo.coords : null
-  const wide = useMediaQuery('(min-width: 880px)')
-  const sheet = useRef(null)
+  const dialog = useRef(null)
   const [cuisineNames, setCuisineNames] = useState({})
-  const results = useSearchResults(filters, coords)
-  const cuisineList = useMemo(() => Object.values(cuisineNames).sort((a, b) => a.localeCompare(b, 'fr')), [cuisineNames])
+  const [trends, setTrends] = useState({ tags: [], cuisines: [] })
+  const [status, setStatus] = useState('')
+
+  // la page occupe tout l'écran (comme le fil mobile) : pas de pied de page, pas d'en-tête sur téléphone
+  useEffect(() => {
+    document.documentElement.classList.add('search-mode')
+    return () => document.documentElement.classList.remove('search-mode')
+  }, [])
 
   useEffect(() => {
-    api
-      .get('/cuisines')
-      .then((c) => setCuisineNames(Object.fromEntries(c.data.items.map((x) => [x._id, x.cuisine_name]))))
+    Promise.all([api.get('/cuisines'), api.get('/trends')])
+      .then(([c, t]) => {
+        setCuisineNames(Object.fromEntries(c.data.items.map((x) => [x._id, x.cuisine_name])))
+        setTrends(t.data)
+      })
       .catch(() => {})
   }, [])
 
   const set = useCallback((patch) => setParams(writeFilters({ ...readFilters(params), ...patch }), { replace: true }), [params, setParams])
   const reset = () => setParams(writeFilters({ ...EMPTY_FILTERS, q: filters.q, view: filters.view, sort: filters.sort }), { replace: true })
+  const clearAll = useCallback(() => setParams(writeFilters({ ...EMPTY_FILTERS, view: filters.view }), { replace: true }), [filters.view, setParams])
+  const onStatus = useCallback((s) => setStatus(s), [])
 
+  const toggle = (key, v) => set({ [key]: filters[key].includes(v) ? without(filters[key], v) : [...filters[key], v] })
   const count = activeCount(filters)
-  const chips = activeChips(filters, set)
-  const showSort = SORTS.filter(([k]) => k !== 'distance' || coords)
-  const filterPanel = <FilterPanel filters={filters} set={set} cuisines={cuisineList} hasPosition={!!coords} onLocate={geo.request} />
+  const cuisineList = useMemo(() => Object.values(cuisineNames).sort((a, b) => a.localeCompare(b, 'fr')), [cuisineNames])
+  const quickCuisines = uniq([...trends.cuisines.map((c) => c.name).slice(0, 6), ...filters.cuisines])
+  const tagList = uniq(trends.tags.map((t) => t.tag))
+  const quickTags = uniq([...tagList.slice(0, 8), ...filters.tags])
+  const map = filters.view === 'map'
 
   return (
-    <div className="wrap wrap--feed search-page fade-in">
-      <div className="search-head">
-        <span className="eyebrow">Recherche</span>
-        <h1>{filters.q ? `« ${filters.q} »` : 'Trouve ton resto'}</h1>
-        <SearchBar value={filters.q} onCommit={(q) => set({ q })} onPickCuisine={(c) => set({ q: '', cuisines: filters.cuisines.includes(c) ? filters.cuisines : [...filters.cuisines, c] })} />
-      </div>
-
-      <div className="toolbar search-tools">
-        {!wide && (
-          <button type="button" className="pill" onClick={() => sheet.current?.showModal()}>
-            <SlidersIcon /> Filtres{count > 0 && <b className="admin__badge">{count}</b>}
-          </button>
-        )}
-        {coords ? (
-          <button type="button" className="pill" aria-pressed="true" onClick={geo.clear}>
-            <MapPinIcon /> Autour de moi · désactiver
-          </button>
-        ) : (
-          <button type="button" className="pill" onClick={geo.request} disabled={geo.status === 'asking'}>
-            <MapPinIcon /> {geo.status === 'asking' ? 'Localisation…' : 'Autour de moi'}
-          </button>
-        )}
-        <label className="sortsel">
-          <span>Trier</span>
-          <select value={filters.sort === 'distance' && !coords ? 'for_you' : filters.sort} onChange={(e) => set({ sort: e.target.value })}>
-            {showSort.map(([k, label]) => (
-              <option key={k} value={k}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="viewtoggle" role="group" aria-label="Affichage">
-          <button type="button" aria-pressed={filters.view === 'list'} onClick={() => set({ view: 'list' })}>
-            Liste
-          </button>
-          <button type="button" aria-pressed={filters.view === 'map'} onClick={() => set({ view: 'map' })}>
-            <MapIcon /> Carte
+    <div className={`sp ${map ? 'sp--map' : 'sp--list'}`}>
+      <h1 className="sr-only">Recherche de restos</h1>
+      <div className="sp__bar">
+        <div className="sp__row">
+          <SearchBar
+            value={filters.q}
+            autoFocus={!!location.state?.focus}
+            onCommit={(q) => set({ q })}
+            onPickCuisine={(c) => set({ q: '', cuisines: uniq([...filters.cuisines, c]) })}
+            onPickTag={(t) => set({ q: '', tags: uniq([...filters.tags, t]) })}
+          />
+          <button type="button" className="sp__filters" onClick={() => dialog.current?.showModal()} aria-label={count ? `Filtres et tri, ${count} actif${count > 1 ? 's' : ''}` : 'Filtres et tri'}>
+            <SlidersIcon />
+            {count > 0 && <b>{count}</b>}
           </button>
         </div>
-      </div>
-      {GEO_TEXT[geo.status] && geo.status !== 'asking' && <p className="notice notice--soft">{GEO_TEXT[geo.status]}</p>}
 
-      {chips.length > 0 && (
-        <ul className="pills active-chips" aria-label="Filtres actifs">
-          {chips.map(([key, label, remove]) => (
-            <li key={key}>
-              <button type="button" className="pill pill--filter" onClick={remove} aria-label={`Retirer le filtre ${label}`}>
-                {label} ✕
-              </button>
-            </li>
-          ))}
-          <li>
-            <button type="button" className="btn btn--link" onClick={reset}>
-              Tout réinitialiser
-            </button>
-          </li>
-        </ul>
-      )}
-
-      <div className="search-layout">
-        {wide && (
-          <aside className="side search-filters" aria-label="Filtres">
-            <h2 className="side__title">Filtres</h2>
-            {filterPanel}
-          </aside>
-        )}
-
-        <section className="search-main" aria-live="polite">
-          {filters.view === 'map' ? (
-            <Suspense fallback={<Loader />}>
-              <SearchMap filters={filters} coords={coords} cuisineNames={cuisineNames} />
-            </Suspense>
+        <div className="sp__chips" role="group" aria-label="Filtres rapides">
+          {coords ? (
+            <Chip on onClick={geo.clear}>
+              <MapPinIcon /> Autour de moi
+            </Chip>
           ) : (
-            <>
-              {results.status === 'ok' && <p className="search-count">{results.total} resto{results.total > 1 ? 's' : ''}</p>}
-              {results.status === 'loading' && !results.items.length && <Loader />}
-              {results.status === 'error' && (
-                <div className="state">
-                  <h2>La recherche n’a pas pu aboutir</h2>
-                  <p>Vérifie ta connexion, puis réessaie.</p>
-                  <button type="button" className="btn btn--primary" onClick={results.reload}>
-                    Réessayer
-                  </button>
-                </div>
-              )}
-              {results.status === 'ok' && results.items.length === 0 && (
-                <div className="state">
-                  <h2>Aucun resto trouvé</h2>
-                  <p>{count || filters.q ? 'Essaie avec moins de filtres ou un autre mot.' : 'Sois le premier à ajouter une bonne adresse !'}</p>
-                  {(count > 0 || filters.q) && (
-                    <button type="button" className="btn btn--secondary" onClick={() => setParams(writeFilters({ ...EMPTY_FILTERS, view: filters.view }), { replace: true })}>
-                      Tout effacer
-                    </button>
-                  )}
-                </div>
-              )}
-              {results.items.length > 0 && (
-                <>
-                  <div className={`feed search-feed ${results.status === 'loading' ? 'is-stale' : ''}`}>
-                    {results.items.map((r, i) => (
-                      <RestoCard key={r._id} index={i % 8} resto={r} cuisineNames={(r.cuisines || []).map((id) => cuisineNames[id]).filter(Boolean)} />
-                    ))}
-                  </div>
-                  {results.page < results.pages && (
-                    <button type="button" className="btn btn--secondary btn--block feed__more" onClick={results.loadMore} disabled={results.loadingMore}>
-                      {results.loadingMore ? 'Chargement…' : 'Voir plus de restos'}
-                    </button>
-                  )}
-                </>
-              )}
-            </>
+            <Chip on={false} onClick={geo.request}>
+              <MapPinIcon /> {geo.status === 'asking' ? 'Localisation…' : 'Autour de moi'}
+            </Chip>
           )}
-        </section>
+          <Chip on={filters.open} onClick={() => set({ open: !filters.open })}>Ouvert</Chip>
+          <Chip on={filters.halal} onClick={() => set({ halal: !filters.halal })}>Halal</Chip>
+          <Chip on={filters.vegan} onClick={() => set({ vegan: !filters.vegan })}>Végé</Chip>
+          {filters.verified && <Chip on removable onClick={() => set({ verified: false })}>Vérifiés</Chip>}
+          {filters.price.map((p) => (
+            <Chip key={`p${p}`} on removable onClick={() => set({ price: without(filters.price, p) })}>{PRICES.find(([v]) => v === p)?.[1] || p}</Chip>
+          ))}
+          {filters.meals.map((m) => (
+            <Chip key={`m${m}`} on removable onClick={() => set({ meals: without(filters.meals, m) })}>{MEALS.find(([v]) => v === m)?.[1] || m}</Chip>
+          ))}
+          {filters.minRating > 0 && <Chip on removable onClick={() => set({ minRating: 0 })}>★ {filters.minRating}+</Chip>}
+          {filters.radius && <Chip on removable onClick={() => set({ radius: null })}>{filters.radius} km</Chip>}
+          {quickCuisines.map((c) => (
+            <Chip key={`c${c}`} on={filters.cuisines.includes(c)} onClick={() => toggle('cuisines', c)}>{c}</Chip>
+          ))}
+          {quickTags.map((t) => (
+            <Chip key={`t${t}`} tag on={filters.tags.includes(t)} onClick={() => toggle('tags', t)}>#{t}</Chip>
+          ))}
+        </div>
+
+        {GEO_TEXT[geo.status] && geo.status !== 'asking' && <p className="sp__note">{GEO_TEXT[geo.status]}</p>}
+        {status && <p className="sp__status" role="status">{status}</p>}
       </div>
 
-      {!wide && (
-        <dialog ref={sheet} className="sheet" aria-labelledby="filters-title" onClick={(e) => e.target === sheet.current && sheet.current.close()}>
-          <div className="sheet__inner">
-            <div className="sheet__head">
-              <h2 id="filters-title">Filtres</h2>
-              <button type="button" className="btn btn--link" onClick={() => sheet.current.close()}>
-                Fermer
-              </button>
-            </div>
-            {filterPanel}
-            <div className="mod__actions">
-              <button type="button" className="btn btn--primary" onClick={() => sheet.current.close()}>
-                Voir les restos
-              </button>
-              {count > 0 && (
-                <button type="button" className="btn btn--link" onClick={reset}>
-                  Réinitialiser
-                </button>
-              )}
-            </div>
+      <div className="sp__body">
+        {map ? (
+          <Suspense fallback={<Loader />}>
+            <SearchMap filters={filters} coords={coords} cuisineNames={cuisineNames} onStatus={onStatus} />
+          </Suspense>
+        ) : (
+          <SearchList filters={filters} coords={coords} cuisineNames={cuisineNames} filtered={count > 0 || !!filters.q} onStatus={onStatus} onClear={clearAll} />
+        )}
+      </div>
+
+      <button type="button" className="sp__toggle" onClick={() => set({ view: map ? 'list' : 'map' })}>
+        {map ? <RowsIcon /> : <MapIcon />} {map ? 'Liste' : 'Carte'}
+      </button>
+
+      <dialog ref={dialog} className="sheet" aria-labelledby="filters-title" onClick={(e) => e.target === dialog.current && dialog.current.close()}>
+        <div className="sheet__inner">
+          <div className="sheet__head">
+            <h2 id="filters-title">Filtres et tri</h2>
+            <button type="button" className="btn btn--link" onClick={() => dialog.current.close()}>
+              Fermer
+            </button>
           </div>
-        </dialog>
-      )}
+          <FilterPanel filters={filters} set={set} cuisines={cuisineList} tags={tagList} hasPosition={!!coords} onLocate={geo.request} />
+          <div className="mod__actions sp__done">
+            <button type="button" className="btn btn--primary" onClick={() => dialog.current.close()}>
+              Voir les restos
+            </button>
+            {count > 0 && (
+              <button type="button" className="btn btn--link" onClick={reset}>
+                Réinitialiser
+              </button>
+            )}
+          </div>
+        </div>
+      </dialog>
     </div>
   )
 }

@@ -35,7 +35,8 @@ function useTypewriter(active) {
 }
 
 // Champ de recherche avec suggestions (restos, cuisines, mots-clés). `onCommit(q)` valide le texte, `onPickCuisine(name)` ajoute un filtre.
-export default function SearchBar({ value, onCommit, onPickCuisine }) {
+export default function SearchBar({ value, onCommit, onPickCuisine, onPickTag, autoFocus }) {
+  const input = useRef(null)
   const listId = useId()
   const [text, setText] = useState(value)
   const [focused, setFocused] = useState(false)
@@ -43,6 +44,10 @@ export default function SearchBar({ value, onCommit, onPickCuisine }) {
   const [active, setActive] = useState(-1)
   const request = useRef(0)
   const placeholder = useTypewriter(!text && !focused)
+
+  useEffect(() => {
+    if (autoFocus) input.current?.focus()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // le texte change de l'extérieur (lien, retour arrière, « réinitialiser »)
   useEffect(() => setText(value), [value])
@@ -73,7 +78,7 @@ export default function SearchBar({ value, onCommit, onPickCuisine }) {
   const options = [
     ...suggest.restos.map((r) => ({ key: `r${r._id}`, label: r.name, hint: r.city, kind: 'Resto', run: () => commit(r.name) })),
     ...suggest.cuisines.map((c) => ({ key: `c${c.name}`, label: c.name, hint: '', kind: 'Cuisine', run: () => pickCuisine(c.name) })),
-    ...suggest.tags.map((t) => ({ key: `t${t}`, label: t, hint: '', kind: 'Mot-clé', run: () => commit(t) })),
+    ...suggest.tags.map((t) => ({ key: `t${t}`, label: t, hint: '', kind: 'Mot-clé', run: () => pickTag(t) })),
   ]
   const open = focused && options.length > 0
 
@@ -81,6 +86,11 @@ export default function SearchBar({ value, onCommit, onPickCuisine }) {
     setText(q)
     setActive(-1)
     onCommit(q)
+  }
+  function pickTag(tag) {
+    setText('')
+    setActive(-1)
+    onPickTag(tag)
   }
   function pickCuisine(name) {
     setText('')
@@ -117,6 +127,7 @@ export default function SearchBar({ value, onCommit, onPickCuisine }) {
     >
       <SearchIcon />
       <input
+        ref={input}
         type="search"
         role="combobox"
         aria-expanded={open}

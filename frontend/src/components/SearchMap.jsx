@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { CircleMarker, MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { CircleMarker, MapContainer, Marker, TileLayer, ZoomControl, useMap, useMapEvents } from 'react-leaflet'
 import api from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import { useLists } from '../lists/useLists.js'
@@ -56,6 +56,11 @@ function Loader({ filters, coords, onData, onState }) {
   }, [load])
 
   useMapEvents({ moveend: () => !first.current && load() })
+  return null
+}
+
+function Deselect({ onClear }) {
+  useMapEvents({ click: onClear })
   return null
 }
 
@@ -115,7 +120,7 @@ function Preview({ resto: r, cuisineNames, onClose }) {
   )
 }
 
-export default function SearchMap({ filters, coords, cuisineNames }) {
+export default function SearchMap({ filters, coords, cuisineNames, onStatus }) {
   const [data, setData] = useState({ items: [], total: 0 })
   const [state, setState] = useState('loading')
   const [selected, setSelected] = useState(null)
@@ -123,11 +128,6 @@ export default function SearchMap({ filters, coords, cuisineNames }) {
   const onState = useCallback((s) => setState(s), [])
   const points = useMemo(() => data.items.filter((r) => r.geo?.coordinates), [data])
   const current = points.find((r) => r._id === selected)
-  const box = useRef(null)
-  const pick = (id) => {
-    setSelected(id)
-    box.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) // la fiche d'aperçu ne doit pas finir sous la barre du bas
-  }
 
   const status =
     state === 'far'
@@ -140,9 +140,13 @@ export default function SearchMap({ filters, coords, cuisineNames }) {
             ? `${data.items.length} restos affichés sur ${data.total} : zoome pour tout voir.`
             : `${data.total} resto${data.total > 1 ? 's' : ''} dans cette zone`
 
+  useEffect(() => onStatus?.(status), [status, onStatus])
+
   return (
-    <div className="searchmap" ref={box}>
-      <MapContainer center={coords ? [coords.lat, coords.lng] : FRANCE} zoom={coords ? 13 : 6} minZoom={4} scrollWheelZoom className="searchmap__map" attributionControl>
+    <div className="searchmap">
+      <MapContainer center={coords ? [coords.lat, coords.lng] : FRANCE} zoom={coords ? 13 : 6} minZoom={4} scrollWheelZoom zoomControl={false} className="searchmap__map" attributionControl>
+        <ZoomControl position="bottomright" />
+        <Deselect onClear={() => setSelected(null)} />
         <TileLayer url={TILE_URL} maxZoom={19} attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">les contributeurs d’OpenStreetMap</a>' />
         <Loader filters={filters} coords={coords} onData={onData} onState={onState} />
         <Recenter coords={coords} />
@@ -154,13 +158,10 @@ export default function SearchMap({ filters, coords, cuisineNames }) {
             icon={r.sponsored ? (r._id === selected ? ICONS.sponsoredOn : ICONS.sponsored) : r._id === selected ? ICONS.selected : ICONS.normal}
             title={r.name}
             keyboard
-            eventHandlers={{ click: () => pick(r._id) }}
+            eventHandlers={{ click: () => setSelected(r._id) }}
           />
         ))}
       </MapContainer>
-      <p className="searchmap__status" role="status">
-        {status}
-      </p>
       {current && <Preview resto={current} cuisineNames={cuisineNames} onClose={() => setSelected(null)} />}
     </div>
   )

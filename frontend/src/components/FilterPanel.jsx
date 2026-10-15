@@ -1,4 +1,4 @@
-import { MEALS, PRICES, RADII, RATINGS } from '../utils/searchParams.js'
+import { MEALS, PRICES, RADII, RATINGS, SORTS } from '../utils/searchParams.js'
 
 function Group({ title, children }) {
   return (
@@ -20,9 +20,17 @@ function Pill({ on, onClick, children, disabled }) {
 const toggle = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v])
 
 // Tous les filtres de la recherche (affichés en feuille sur mobile, en colonne sur ordinateur)
-export default function FilterPanel({ filters: f, set, cuisines, hasPosition, onLocate }) {
+export default function FilterPanel({ filters: f, set, cuisines, tags, hasPosition, onLocate }) {
+  const sorts = SORTS.filter(([k]) => k !== 'distance' || hasPosition)
   return (
     <div className="filters">
+      <Group title="Trier par">
+        {sorts.map(([k, label]) => (
+          <Pill key={k} on={f.sort === k} onClick={() => set({ sort: k })}>
+            {label}
+          </Pill>
+        ))}
+      </Group>
       <Group title="Régime">
         <Pill on={f.halal} onClick={() => set({ halal: !f.halal })}>Halal</Pill>
         <Pill on={f.vegan} onClick={() => set({ vegan: !f.vegan })}>Option végé</Pill>
@@ -34,6 +42,15 @@ export default function FilterPanel({ filters: f, set, cuisines, hasPosition, on
           </Pill>
         ))}
       </Group>
+      {tags.length > 0 && (
+        <Group title="Mots-clés">
+          {tags.map((t) => (
+            <Pill key={t} on={f.tags.includes(t)} onClick={() => set({ tags: toggle(f.tags, t) })}>
+              #{t}
+            </Pill>
+          ))}
+        </Group>
+      )}
       <Group title="Budget">
         {PRICES.map(([v, label]) => (
           <Pill key={v} on={f.price.includes(v)} onClick={() => set({ price: toggle(f.price, v) })}>

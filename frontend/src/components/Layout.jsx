@@ -36,6 +36,7 @@ function SearchBar() {
         aria-label="Chercher un resto"
         value={q}
         onChange={(e) => setQ(e.target.value)}
+        onFocus={() => navigate(q.trim() ? `/recherche?q=${encodeURIComponent(q.trim())}` : '/recherche', { state: { focus: true } })}
       />
     </form>
   )
