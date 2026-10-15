@@ -9,12 +9,14 @@ router.get('/', async (req, res, next) => {
   try {
     const [tags, cuisines] = await Promise.all([
       Resto.aggregate([
+        { $match: { status: { $ne: 'rejected' } } },
         { $unwind: '$tags' },
         { $group: { _id: { $toLower: '$tags' }, count: { $sum: 1 } } },
         { $sort: { count: -1, _id: 1 } },
         { $limit: 10 },
       ]),
       Resto.aggregate([
+        { $match: { status: { $ne: 'rejected' } } },
         { $unwind: '$cuisines' },
         { $group: { _id: '$cuisines', count: { $sum: 1 } } },
         { $sort: { count: -1, _id: 1 } },

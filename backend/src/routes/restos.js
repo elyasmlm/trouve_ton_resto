@@ -78,6 +78,8 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:id', loadResto, async (req, res, next) => {
   try {
+    const seesRejected = req.user && (req.user.role === 'admin' || (req.resto.added_by && req.resto.added_by.equals(req.user._id)));
+    if (req.resto.status === 'rejected' && !seesRejected) throw httpError(404, 'Resto not found');
     const [resto, hours, ratings] = await Promise.all([
       Resto.findById(req.resto._id).populate('cuisines').lean(),
       OpenHours.findOne({ resto: req.resto._id }).lean(),

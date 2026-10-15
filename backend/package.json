@@ -6,7 +6,8 @@
         "start": "node src/server.js",
         "dev": "nodemon src/server.js",
         "test": "jest",
-        "import:places": "node scripts/import-places.js"
+        "import:places": "node scripts/import-places.js",
+        "make-admin": "node scripts/make-admin.js"
     },
     "keywords": [],
     "author": "",

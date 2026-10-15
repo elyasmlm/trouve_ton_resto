@@ -39,7 +39,8 @@ const restoSchema = new mongoose.Schema(
     add_date: { type: Date, default: Date.now, required: true },
     // Résumé dénormalisé de la collection ratings
     rating: { google_rating: score, tripadvisor_rating: score, inside_rating: score },
-    status: { type: String, default: 'active' },
+    status: { type: String, default: 'active' }, // 'active', ou 'rejected' (fiche refusée par la modération : masquée du public)
+    rejection_reason: { type: String, trim: true, maxlength: 300 },
     verified: { type: Boolean, default: false },
     sponsored: { type: Boolean, default: false },
     sponsored_until: Date,
