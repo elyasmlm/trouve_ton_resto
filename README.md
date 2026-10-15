@@ -21,3 +21,21 @@ Ils sont idempotents : pour appliquer une évolution du schéma sur une base exi
 docker exec mongo mongosh -u <user> -p <mot_de_passe> --authenticationDatabase admin --file /docker-entrypoint-initdb.d/init.js
 docker exec mongo mongosh -u <user> -p <mot_de_passe> --authenticationDatabase admin --file /docker-entrypoint-initdb.d/seed.js
 ```
+
+## Base de lieux (préremplissage de « Ajouter un resto »)
+
+La recherche d'un lieu interroge **deux sources en même temps**, puis fusionne les doublons :
+
+1. **Une base locale** (`places`) importée depuis [Overture Maps](https://overturemaps.org/) — qui contient les données de Foursquare Open Source Places et de Meta : nom, adresse, GPS, téléphones, sites, réseaux sociaux, e-mails, catégories.
+2. **OpenStreetMap** (Nominatim) : horaires, régimes, accessibilité, et ce qui manque à la base locale.
+
+Remplir la base locale (une fois, puis de temps en temps pour la rafraîchir ; compter quelques minutes et quelques centaines de Mo téléchargés, aucun compte nécessaire) :
+
+```
+cd backend
+npm run import:places                                      # France, Belgique, Suisse, Luxembourg
+npm run import:places -- --countries FR                    # un seul pays
+npm run import:places -- --bbox 2.34,48.85,2.37,48.87 --countries FR   # une petite zone, pour essayer
+```
+
+Sans cet import, la recherche fonctionne quand même avec OpenStreetMap seul. Les licences des données sont détaillées dans [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

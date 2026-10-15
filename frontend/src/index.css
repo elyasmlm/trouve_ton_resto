@@ -524,3 +524,61 @@ html.reels-mode .header, html.reels-mode .footer { display: none; }
 /* tout ce qui est cliquable affiche le curseur « main » (sauf quand c'est désactivé) */
 button:not(:disabled), [role='checkbox'], [role='tab'], summary, label.switch { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
+
+/* ---------- Ajouter un resto ---------- */
+.addresto { max-width: 720px; }
+.addresto h1, .done h1 { font-size: clamp(1.8rem, 7vw, 2.6rem); color: var(--brown-deep); margin: 6px 0 8px; }
+.place { display: grid; gap: 14px; }
+.place__label { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brown); }
+.place__row { display: flex; gap: 8px; margin-top: 6px; }
+.place__input { flex: 1; min-width: 0; }
+.place__results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.place__results button { display: grid; gap: 2px; width: 100%; text-align: left; padding: 12px 14px; background: var(--cream); border: 2px solid var(--line); border-radius: var(--radius-sm); font: inherit; color: var(--brown-deep); transition: border-color 0.2s, background 0.2s; }
+.place__results button:hover { border-color: var(--brown-deep); background: var(--yellow-soft); }
+.place__results span { color: var(--ink-soft); font-size: 0.92rem; }
+
+.fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 12px; min-width: 0; }
+.fieldset legend { padding: 0; margin-bottom: 4px; font-weight: 700; font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brown); }
+.form-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+.field select { width: 100%; min-height: 52px; padding: 0 12px; border-radius: var(--radius-sm); border: 2px solid var(--taupe); background: #fff; color: var(--ink); font: inherit; font-size: 1rem; }
+.field select:focus { outline: none; border-color: var(--brown-deep); box-shadow: 0 0 0 4px var(--yellow); }
+.dupes { background: var(--yellow-soft); border: 1.5px dashed var(--gold); border-radius: var(--radius-sm); padding: 14px; display: grid; gap: 10px; }
+.dupes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.dupes li { display: grid; gap: 6px; }
+.dupes small { color: var(--ink-soft); }
+
+.photos { display: grid; gap: 8px; }
+.photos__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.photos__item { position: relative; margin: 0; aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; border: 2px solid var(--brown-deep); }
+.photos__item img { width: 100%; height: 100%; object-fit: cover; }
+.photos__item button { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgb(30 18 12 / 75%); color: #fff; font-size: 0.9rem; }
+.photos__add { aspect-ratio: 1; display: grid; place-content: center; justify-items: center; gap: 4px; padding: 6px; border-radius: var(--radius-sm); border: 2px dashed var(--brown); background: var(--cream); color: var(--brown-deep); font: inherit; font-size: 0.82rem; font-weight: 600; text-align: center; }
+.photos__add svg { width: 28px; height: 28px; color: var(--gold); }
+.photos__add:hover { background: var(--yellow-soft); }
+.photos__hint { color: var(--ink-soft); font-size: 0.85rem; }
+.progress { height: 10px; border-radius: 999px; background: var(--taupe); overflow: hidden; }
+.progress span { display: block; height: 100%; background: var(--yellow); border-right: 2px solid var(--brown-deep); transition: width 0.2s; }
+.done { text-align: center; display: grid; justify-items: center; gap: 8px; padding-top: 40px; }
+
+@media (min-width: 560px) {
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .photos__grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ---------- Préremplissage d'un resto ---------- */
+.place__form { display: grid; gap: 12px; }
+.place__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.place__known { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.place__tag { font-style: normal; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 1px 8px; border-radius: 6px; background: var(--taupe); color: var(--brown-deep); }
+.place__tag--cuisine { background: var(--yellow-soft); }
+.prefill { display: grid; gap: 4px; }
+.prefill span { color: var(--ink-soft); font-size: 0.92rem; }
+.hours { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.hours li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--taupe); font-size: 0.95rem; }
+.hours li span:first-child { font-weight: 600; color: var(--brown-deep); }
+.credits { color: var(--ink-soft); font-size: 0.78rem; line-height: 1.4; }
+.credits a { color: var(--brown); }
+
+.diet { padding: 14px; border: 2px dashed var(--brown); border-radius: var(--radius-sm); background: var(--cream); }
+.diet:has(input[aria-invalid='true']) { border-color: var(--danger); border-style: solid; }
+.diet input[aria-invalid='true'] { outline: 2px solid var(--danger); }

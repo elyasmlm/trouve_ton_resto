@@ -135,7 +135,7 @@ describe('GET /api/restos/:id and /api/cuisines', () => {
 
 describe('write access', () => {
   let created;
-  const payload = { name: 'Nouveau', location: address('Paris'), geo: { lat: 48.85, lng: 2.35 }, price_range: '€' };
+  const payload = { name: 'Nouveau', location: address('Paris'), geo: { lat: 48.85, lng: 2.35 }, price_range: '€', vegan: true };
 
   it('requires authentication to add a resto', async () => {
     expect((await request(app).post('/api/restos').send(payload)).status).toBe(401);
@@ -193,5 +193,101 @@ describe('write access', () => {
     expect((await request(app).delete(`/api/restos/${created._id}`).set(as(tokens.admin))).status).toBe(204);
     expect((await request(app).get(`/api/restos/${created._id}`)).status).toBe(404);
     expect(await OpenHours.countDocuments({ resto: created._id })).toBe(0);
+  });
+});
+describe('free-text fields and daily limit', () => {
+  const base = { name: 'Chez Test', location: address('Paris'), price_range: '€', vegan: true };
+  let user;
+
+  beforeAll(async () => {
+    user = await signup('carl');
+  });
+
+  it('accepts a clean phone, website and tags', async () => {
+    const res = await request(app)
+      .post('/api/restos')
+      .set(as(user))
+      .send({ ...base, phone_numbers: ['01 23 45 67 89'], website: 'https://chez-test.fr', tags: ['terrasse', ' brunch '] });
+    expect(res.status).toBe(201);
+    expect(res.body.resto).toMatchObject({ phone_numbers: ['01 23 45 67 89'], website: 'https://chez-test.fr', tags: ['terrasse', 'brunch'] });
+  });
+
+  it('rejects dangerous or oversized values', async () => {
+    for (const extra of [{ website: 'javascript:alert(1)' }, { website: 'ftp://x.fr' }, { website: 'pas un lien' }, { phone_numbers: ['9'.repeat(31)] }, { tags: ['t'.repeat(31)] }]) {
+      expect((await request(app).post('/api/restos').set(as(user)).send({ ...base, ...extra })).status).toBe(400);
+    }
+  });
+
+  it('limits a user to 10 new restos a day, but not admins', async () => {
+    const spammer = await signup('spammer');
+    for (let i = 0; i < 10; i += 1) {
+      expect((await request(app).post('/api/restos').set(as(spammer)).send({ ...base, name: `Spam ${i}` })).status).toBe(201);
+    }
+    expect((await request(app).post('/api/restos').set(as(spammer)).send({ ...base, name: 'Spam 11' })).status).toBe(429);
+    expect((await request(app).post('/api/restos').set(as(tokens.admin)).send({ ...base, name: 'Admin 1' })).status).toBe(201);
+  });
+});
+
+describe('social links', () => {
+  const base = { name: 'Chez Liens', location: address('Paris'), halal_certificate: true };
+  let user;
+  beforeAll(async () => {
+    user = await signup('lena');
+  });
+
+  it('accepts http(s) links', async () => {
+    const res = await request(app).post('/api/restos').set(as(user)).send({ ...base, social_networks: { instagram: 'https://www.instagram.com/chezliens', facebook: 'http://facebook.com/chezliens' } });
+    expect(res.status).toBe(201);
+    expect(res.body.resto.social_networks).toMatchObject({ instagram: 'https://www.instagram.com/chezliens' });
+  });
+
+  it('rejects anything else, so a link can never run script when displayed', async () => {
+    for (const instagram of ['javascript:alert(1)', 'data:text/html,x', '@chezliens', 'ftp://x.fr', 'https://' + 'x'.repeat(300)]) {
+      expect((await request(app).post('/api/restos').set(as(user)).send({ ...base, social_networks: { instagram } })).status).toBe(400);
+    }
+  });
+});
+
+describe('halal or vegetarian rule', () => {
+  const base = { name: 'Chez Règle', location: address('Paris') };
+  let user;
+
+  beforeAll(async () => {
+    user = await signup('rulefan');
+  });
+
+  it('refuses a resto that is neither halal nor vegetarian-friendly', async () => {
+    for (const extra of [{}, { vegan: false, halal_certificate: false }, { vegan: false }, { halal_certificate: false }]) {
+      const res = await request(app).post('/api/restos').set(as(user)).send({ ...base, ...extra });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/halal or offer a vegetarian option/);
+    }
+  });
+
+  it('accepts a halal resto, a vegetarian-friendly one, or both', async () => {
+    for (const extra of [{ halal_certificate: true }, { vegan: true }, { halal_certificate: true, vegan: true }]) {
+      expect((await request(app).post('/api/restos').set(as(user)).send({ ...base, ...extra })).status).toBe(201);
+    }
+  });
+
+  it('also applies to admins when they add a resto', async () => {
+    expect((await request(app).post('/api/restos').set(as(tokens.admin)).send(base)).status).toBe(400);
+  });
+
+  it('keeps applying on updates: the last option cannot be removed, unrelated edits keep working', async () => {
+    const created = (await request(app).post('/api/restos').set(as(user)).send({ ...base, halal_certificate: true })).body.resto;
+    const url = `/api/restos/${created._id}`;
+    expect((await request(app).patch(url).set(as(user)).send({ halal_certificate: false })).status).toBe(400);
+    expect((await request(app).patch(url).set(as(user)).send({ name: 'Renommé' })).status).toBe(200);
+    expect((await request(app).patch(url).set(as(user)).send({ halal_certificate: false, vegan: true })).status).toBe(200);
+    expect((await request(app).patch(url).set(as(user)).send({ vegan: false })).status).toBe(400);
+  });
+
+  it('does not block moderation of older restos, but asks to fix them when their content is edited', async () => {
+    const legacy = await Resto.create({ name: 'Ancien resto', location: address('Paris') }); // créé avant la règle : ni halal ni végé
+    const url = `/api/restos/${legacy.id}`;
+    expect((await request(app).patch(url).set(as(tokens.admin)).send({ verified: true })).status).toBe(200);
+    expect((await request(app).patch(url).set(as(tokens.admin)).send({ name: 'Ancien resto 2' })).status).toBe(400);
+    expect((await request(app).patch(url).set(as(tokens.admin)).send({ name: 'Ancien resto 2', vegan: true })).status).toBe(200);
   });
 });

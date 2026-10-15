@@ -4,6 +4,8 @@ const Resto = require('../models/Resto');
 const OpenHours = require('../models/OpenHours');
 const Rating = require('../models/Rating');
 const Review = require('../models/Review');
+const Photo = require('../models/Photo');
+const { removeImageFiles } = require('../services/images');
 const { requireAuth, requireRole, httpError } = require('../middleware/auth');
 const { searchRestos } = require('../services/restoSearch');
 const loadResto = require('../middleware/loadResto');
@@ -26,6 +28,15 @@ function toGeo(input) {
   const coordinates = Array.isArray(input.coordinates) ? input.coordinates : [input.lng, input.lat];
   return { type: 'Point', coordinates: coordinates.map(Number) };
 }
+
+// Règle de l'appli : chaque resto est halal, ou à défaut propose au moins une option végétarienne.
+// (`vegan` = « options végé / vegan », `halal_certificate` = « halal ».)
+const DIET_RULE = 'A resto must be halal or offer a vegetarian option';
+function checkDiet(resto) {
+  if (!resto.halal_certificate && !resto.vegan) throw httpError(400, DIET_RULE);
+}
+// modifier la fiche (hors champs de modération réservés aux admins) oblige à respecter la règle
+const touchesContent = (body) => EDITABLE.some((key) => body[key] !== undefined) || body.location !== undefined || body.geo !== undefined;
 
 function applyBody(resto, body, isAdmin) {
   for (const key of isAdmin ? [...EDITABLE, ...ADMIN_ONLY] : EDITABLE) {
@@ -78,10 +89,20 @@ router.get('/:id', loadResto, async (req, res, next) => {
   }
 });
 
+// Un utilisateur ne peut pas ajouter plus de 10 restos par jour (les admins n'ont pas de limite)
+const MAX_NEW_RESTOS_PER_DAY = 10;
+
 router.post('/', requireAuth, async (req, res, next) => {
   try {
+    if (req.user.role !== 'admin') {
+      const since = new Date(Date.now() - 24 * 3600 * 1000);
+      if ((await Resto.countDocuments({ added_by: req.user._id, created_at: { $gte: since } })) >= MAX_NEW_RESTOS_PER_DAY) {
+        throw httpError(429, `You can add up to ${MAX_NEW_RESTOS_PER_DAY} restos per day`);
+      }
+    }
     const resto = new Resto({ added_by: req.user._id });
     applyBody(resto, req.body || {}, req.user.role === 'admin');
+    checkDiet(resto);
     await resto.save();
     res.status(201).json({ resto });
   } catch (err) {
@@ -92,6 +113,7 @@ router.post('/', requireAuth, async (req, res, next) => {
 router.patch('/:id', requireAuth, loadResto, requireEditor, async (req, res, next) => {
   try {
     applyBody(req.resto, req.body || {}, req.user.role === 'admin');
+    if (touchesContent(req.body || {})) checkDiet(req.resto);
     await req.resto.save();
     res.json({ resto: req.resto });
   } catch (err) {
@@ -123,7 +145,7 @@ router.delete('/:id', requireAuth, requireRole('admin'), loadResto, async (req, 
       OpenHours.deleteMany({ resto: id }),
       Rating.deleteMany({ resto: id }),
       Review.deleteMany({ resto: id }),
-      db.collection('photos').deleteMany({ resto: id }),
+      Photo.find({ resto: id }).lean().then((photos) => Promise.all(photos.map((p) => removeImageFiles(p).catch(() => {})))).then(() => Photo.deleteMany({ resto: id })),
       db.collection('lists').updateMany({ restos: id }, { $pull: { restos: id } }),
     ]);
     await req.resto.deleteOne();

@@ -44,6 +44,7 @@ export default function RestoCard({ resto: r, cuisineNames = [], index = 0, extr
   const noRating = rating.inside_rating == null && rating.google_rating == null && rating.tripadvisor_rating == null
   const website = safeWebsite(r.website)
   const cover = r.photos?.[0]
+  const coverSrc = cover && (cover.thumb || cover.url)
   const phone = r.phone_numbers?.[0]
   const dist = distance(r.distance)
   const traits = [r.vegan && 'Végé', r.halal_certificate && 'Halal'].filter(Boolean)
@@ -55,7 +56,7 @@ export default function RestoCard({ resto: r, cuisineNames = [], index = 0, extr
           isVideo(cover.url) ? (
             <video src={cover.url} muted loop playsInline autoPlay preload="metadata" aria-label={cover.caption || r.name} />
           ) : (
-            <img src={cover.url} alt={cover.caption || r.name} loading="lazy" />
+            <img src={coverSrc} alt={cover.caption || r.name} loading="lazy" />
           )
         ) : (
           <PlateArt />
