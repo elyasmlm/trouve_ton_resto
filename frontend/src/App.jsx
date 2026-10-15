@@ -8,9 +8,10 @@ import Account from './pages/Account.jsx'
 import Preferences from './pages/Preferences.jsx'
 import Lists from './pages/Lists.jsx'
 import ListDetail from './pages/ListDetail.jsx'
+import AddResto from './pages/AddResto.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import NotFound from './pages/NotFound.jsx'
-import { BellIcon, PlusIcon, SearchIcon } from './components/Icons.jsx'
+import { BellIcon, SearchIcon } from './components/Icons.jsx'
 
 export default function App() {
   return (
@@ -31,11 +32,7 @@ export default function App() {
           path="ajouter"
           element={
             <RequireAuth>
-              <ComingSoon
-                icon={PlusIcon}
-                title="Ajouter un resto"
-                text="Tu connais une bonne adresse qui n’est pas encore là ? Bientôt, tu pourras la partager en deux minutes."
-              />
+              <AddResto />
             </RequireAuth>
           }
         />
