@@ -4,6 +4,7 @@ const Cuisine = require('../models/Cuisine');
 const Photo = require('../models/Photo');
 const { isOpenAt } = require('../utils/openHours');
 const { httpError } = require('../middleware/auth');
+const { normalize } = require('./placeMapping');
 
 const OPEN_FILTER_CAP = 1000;
 const SORTS = ['for_you', 'distance', 'rating', 'recent', 'name', 'price_asc', 'price_desc'];
@@ -73,10 +74,21 @@ async function resolveCuisines(values) {
 async function searchRestos(query, user) {
   const filter = { status: { $ne: 'rejected' } }; // les fiches refusées par la modération n'apparaissent pas
 
+  // Texte libre : chaque mot tapé doit commencer un mot du nom, de la ville, du code postal ou d'un mot-clé
+  // (sans accents ni majuscules) ou désigner une cuisine (« italien » trouve les restos de cuisine italienne).
   const q = typeof query.q === 'string' ? query.q.trim().slice(0, 100) : '';
   if (q) {
-    const rx = new RegExp(escapeRegex(q), 'i');
-    filter.$or = [{ name: rx }, { tags: rx }, { 'location.city': rx }];
+    const tokens = normalize(q).split(' ').filter(Boolean).slice(0, 8);
+    if (!tokens.length) {
+      filter._id = { $in: [] }; // rien d'exploitable dans la saisie (ex. « .* ») : aucun résultat
+    } else {
+      const cuisines = (await Cuisine.find().select('cuisine_name').lean()).map((c) => ({ id: c._id, name: normalize(c.cuisine_name) }));
+      filter.$and = tokens.map((t) => {
+        const word = { search_norm: new RegExp(`(^| )${escapeRegex(t)}`) };
+        const ids = t.length >= 3 ? cuisines.filter((c) => c.name.startsWith(t)).map((c) => c.id) : [];
+        return ids.length ? { $or: [word, { cuisines: { $in: ids } }] } : word;
+      });
+    }
   }
   if (query.city) filter['location.city'] = new RegExp(`^${escapeRegex(String(query.city).trim())}$`, 'i');
   if (query.country) filter['location.country'] = String(query.country).trim().toUpperCase();
@@ -97,6 +109,17 @@ async function searchRestos(query, user) {
     if (b !== undefined) filter[field] = b;
   }
 
+  // Zone de carte : bbox=ouest,sud,est,nord
+  if (query.bbox !== undefined && query.bbox !== '') {
+    const b = String(query.bbox).split(',').map(Number);
+    const [w, s, e, n] = b;
+    if (b.length !== 4 || b.some((v) => !Number.isFinite(v))) throw httpError(400, 'bbox must be west,south,east,north');
+    if (!(w < e && s < n) || w < -180 || e > 180 || s < -90 || n > 90) throw httpError(400, 'bbox is out of range');
+    if (e - w > 170 || n - s > 170) throw httpError(400, 'bbox is too large');
+    filter.geo = { $geoWithin: { $geometry: { type: 'Polygon', coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] } } };
+  }
+  const mapView = query.view === 'map'; // réponse allégée pour afficher beaucoup de points sur la carte
+
   const minRating = num(query.minRating, 'minRating', 0, 5);
   const lat = num(query.lat, 'lat', -90, 90);
   const lng = num(query.lng, 'lng', -180, 180);
@@ -114,7 +137,7 @@ async function searchRestos(query, user) {
   if (!SORTS.includes(sort)) throw httpError(400, `sort must be one of ${SORTS.join(', ')}`);
   if (sort === 'distance' && !hasGeo) throw httpError(400, 'sort=distance requires lat and lng');
 
-  const limit = Math.min(Math.max(parseInt(query.limit, 10) || 20, 1), 50);
+  const limit = Math.min(Math.max(parseInt(query.limit, 10) || (mapView ? 200 : 20), 1), mapView ? 200 : 50);
   const page = Math.max(parseInt(query.page, 10) || 1, 1);
 
   const pipeline = [];
@@ -178,7 +201,15 @@ async function searchRestos(query, user) {
     total = res.total[0] ? res.total[0].n : 0;
   }
 
-  await attachPhotos(items);
+  if (mapView) {
+    items = items.map((r) => ({
+      _id: r._id, name: r.name, geo: r.geo, price_range: r.price_range, rating_avg: r.rating_avg, is_open: r.is_open, sponsored: r.sponsored,
+      verified: r.verified, vegan: r.vegan, halal_certificate: r.halal_certificate, cuisines: r.cuisines, distance: r.distance,
+      location: r.location && { street: r.location.street, city: r.location.city, zip: r.location.zip },
+    }));
+  } else {
+    await attachPhotos(items);
+  }
   return { items, page, limit, total, pages: Math.ceil(total / limit) };
 }
 
