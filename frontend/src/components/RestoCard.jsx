@@ -3,6 +3,7 @@ import { useAuth } from '../auth/useAuth.js'
 import { useLists } from '../lists/useLists.js'
 import { BadgeCheckIcon, ListPlusIcon, MapPinIcon, MapIcon } from './Icons.jsx'
 import PlateArt from './PlateArt.jsx'
+import ReportButton from './ReportButton.jsx'
 import { distance, fmt, isVideo, mapsUrl, safeWebsite } from '../utils/resto.js'
 
 
@@ -136,6 +137,7 @@ export default function RestoCard({ resto: r, cuisineNames = [], index = 0, extr
               Site web
             </a>
           )}
+          <ReportButton resto={r} photo={cover?._id ? cover : undefined} />
         </div>
         {extra}
       </div>

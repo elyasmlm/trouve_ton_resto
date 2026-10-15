@@ -9,6 +9,7 @@ import Preferences from './pages/Preferences.jsx'
 import Lists from './pages/Lists.jsx'
 import ListDetail from './pages/ListDetail.jsx'
 import AddResto from './pages/AddResto.jsx'
+import Admin from './pages/Admin.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import NotFound from './pages/NotFound.jsx'
 import { BellIcon, SearchIcon } from './components/Icons.jsx'
@@ -70,6 +71,14 @@ export default function App() {
           element={
             <RequireAuth>
               <Preferences />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="admin"
+          element={
+            <RequireAuth>
+              <Admin />
             </RequireAuth>
           }
         />

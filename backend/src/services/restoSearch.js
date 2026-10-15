@@ -71,7 +71,7 @@ async function resolveCuisines(values) {
  * lat + lng (+ radius en km) pour la proximité, open (now | date ISO), sort, page, limit.
  */
 async function searchRestos(query, user) {
-  const filter = {};
+  const filter = { status: { $ne: 'rejected' } }; // les fiches refusées par la modération n'apparaissent pas
 
   const q = typeof query.q === 'string' ? query.q.trim().slice(0, 100) : '';
   if (q) {
@@ -190,7 +190,7 @@ async function attachPhotos(items) {
   for (const p of photos) {
     const key = String(p.resto);
     const list = byResto.get(key) || [];
-    if (list.length < 5) list.push({ url: p.url, thumb: p.thumb, caption: p.caption });
+    if (list.length < 5) list.push({ _id: p._id, url: p.url, thumb: p.thumb, caption: p.caption });
     byResto.set(key, list);
   }
   for (const r of items) r.photos = byResto.get(String(r._id)) || [];

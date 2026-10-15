@@ -5,14 +5,14 @@ import { useLists } from '../lists/useLists.js'
 import { distance, fmt, isVideo, mapsUrl, safeWebsite } from '../utils/resto.js'
 import { BadgeCheckIcon, GlobeIcon, ListPlusIcon, MapIcon, MapPinIcon, PhoneIcon, ShareIcon, StarIcon } from './Icons.jsx'
 import PlateArt from './PlateArt.jsx'
+import ReportButton from './ReportButton.jsx'
 
 // Une teinte de fond stable par resto quand il n'a pas encore de photo
 const hue = (name) => [...name].reduce((n, c) => (n + c.charCodeAt(0)) % 4, 0)
 
-function Media({ resto: r, visible }) {
+function Media({ resto: r, visible, slide, onSlide }) {
   const photos = r.photos || []
   const gallery = useRef(null)
-  const [slide, setSlide] = useState(0)
 
   // les vidéos ne tournent que quand le resto est à l'écran
   useEffect(() => {
@@ -31,7 +31,7 @@ function Media({ resto: r, visible }) {
       <div
         className="reel__gallery"
         ref={gallery}
-        onScroll={(e) => setSlide(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
+        onScroll={(e) => onSlide(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
       >
         {photos.map((p, i) =>
           isVideo(p.url) ? (
@@ -57,6 +57,7 @@ export default function ReelCard({ resto: r, cuisineNames = [], onTag }) {
   const root = useRef(null)
   const [visible, setVisible] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [slide, setSlide] = useState(0)
   const saved = isSaved(r._id)
   const website = safeWebsite(r.website)
   const phone = r.phone_numbers?.[0]
@@ -89,7 +90,7 @@ export default function ReelCard({ resto: r, cuisineNames = [], onTag }) {
   const price = r.price_range
   return (
     <article ref={root} className={`reel ${r.sponsored ? 'reel--premium' : ''}`} aria-label={r.name}>
-      <Media resto={r} visible={visible} />
+      <Media resto={r} visible={visible} slide={slide} onSlide={setSlide} />
       <div className="reel__scrim" />
 
       <div className="reel__rail">
@@ -182,6 +183,9 @@ export default function ReelCard({ resto: r, cuisineNames = [], onTag }) {
             ))}
           </p>
         )}
+        <ReportButton resto={r} photo={r.photos?.[slide]?._id ? r.photos[slide] : undefined} className="reel__report">
+          Signaler
+        </ReportButton>
       </div>
     </article>
   )

@@ -54,6 +54,11 @@ export default function Account() {
       <Link to="/preferences" className="btn btn--primary btn--block" style={{ marginBottom: 12 }}>
         Modifier mes préférences
       </Link>
+      {user.role === 'admin' && (
+        <Link to="/admin" className="btn btn--secondary btn--block" style={{ marginBottom: 12 }}>
+          Espace admin
+        </Link>
+      )}
       <button type="button" className="btn btn--secondary btn--block" onClick={leave}>
         Me déconnecter
       </button>
