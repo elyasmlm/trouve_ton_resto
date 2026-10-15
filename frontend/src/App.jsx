@@ -12,23 +12,15 @@ import AddResto from './pages/AddResto.jsx'
 import Admin from './pages/Admin.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import NotFound from './pages/NotFound.jsx'
-import { BellIcon, SearchIcon } from './components/Icons.jsx'
+import Search from './pages/Search.jsx'
+import { BellIcon } from './components/Icons.jsx'
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Home />} />
-        <Route
-          path="recherche"
-          element={
-            <ComingSoon
-              icon={SearchIcon}
-              title="La recherche arrive"
-              text="Bientôt, tu pourras filtrer par cuisine, prix, distance et même par ce qui est ouvert maintenant."
-            />
-          }
-        />
+        <Route path="recherche" element={<Search />} />
         <Route
           path="ajouter"
           element={

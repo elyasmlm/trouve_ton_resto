@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { normalize } = require('../services/placeMapping');
 
 const MEAL_TYPES = ['breakfast', 'brunch', 'lunch', 'dinner', 'snack', 'late_night'];
 
@@ -52,6 +53,7 @@ const restoSchema = new mongoose.Schema(
     phone_numbers: [{ type: String, trim: true, maxlength: 30 }],
     website: { type: String, trim: true, maxlength: 300, match: [/^https?:\/\/\S+$/i, 'website must be an http(s) link'] },
     tags: [{ type: String, trim: true, maxlength: 30 }],
+    search_norm: String, // nom, ville, code postal et mots-clés sans accents ni majuscules (voir plus bas)
   },
   {
     collection: 'restos',
@@ -59,6 +61,11 @@ const restoSchema = new mongoose.Schema(
   }
 );
 restoSchema.index({ geo: '2dsphere' });
+
+// Texte utilisé par la recherche : « Café de l'Été, Paris 75001, terrasse » -> « cafe de l ete paris 75001 terrasse »
+restoSchema.pre('validate', function buildSearchText() {
+  this.search_norm = normalize([this.name, this.location && this.location.city, this.location && this.location.zip, ...(this.tags || [])].join(' '));
+});
 
 module.exports = mongoose.model('Resto', restoSchema);
 module.exports.MEAL_TYPES = MEAL_TYPES;

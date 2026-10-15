@@ -7,7 +7,8 @@
         "dev": "nodemon src/server.js",
         "test": "jest",
         "import:places": "node scripts/import-places.js",
-        "make-admin": "node scripts/make-admin.js"
+        "make-admin": "node scripts/make-admin.js",
+        "backfill:search": "node scripts/backfill-search.js"
     },
     "keywords": [],
     "author": "",
