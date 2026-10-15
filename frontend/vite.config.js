@@ -10,7 +10,11 @@ export default defineConfig(({ mode }) => {
       // accessible depuis le téléphone via l'IP du PC (même Wi-Fi)
       host: true,
       // les appels /api passent par Vite : pas de CORS, et ça marche aussi depuis le téléphone
-      proxy: { '/api': env.VITE_PROXY_TARGET || 'http://localhost:3001' },
+      proxy: {
+        '/api': env.VITE_PROXY_TARGET || 'http://localhost:3001',
+        // photos envoyées par les utilisateurs
+        '/uploads': env.VITE_PROXY_TARGET || 'http://localhost:3001',
+      },
     },
   }
 })

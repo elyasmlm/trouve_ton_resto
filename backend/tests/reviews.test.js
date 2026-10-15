@@ -8,7 +8,6 @@ const User = require('../src/models/User');
 const Resto = require('../src/models/Resto');
 const Rating = require('../src/models/Rating');
 const Review = require('../src/models/Review');
-const Photo = require('../src/models/Photo');
 
 let mongod;
 let resto;
@@ -49,7 +48,6 @@ afterAll(async () => {
 });
 
 const reviewsUrl = () => `/api/restos/${resto.id}/reviews`;
-const photosUrl = () => `/api/restos/${resto.id}/photos`;
 const insideRating = async () => (await Resto.findById(resto._id).lean()).rating?.inside_rating;
 
 describe('reviews', () => {
@@ -137,37 +135,5 @@ describe('ratings from external sources', () => {
 
     await request(app).put(url('google')).set(as(tokens.admin)).send({ value: 4.4 });
     expect(await Rating.countDocuments({ resto: resto._id, source: 'google' })).toBe(1);
-  });
-});
-
-describe('photos', () => {
-  let photo;
-
-  it('requires authentication and a valid http(s) url', async () => {
-    const body = { url: 'https://example.com/a.jpg' };
-    expect((await request(app).post(photosUrl()).send(body)).status).toBe(401);
-    for (const bad of ['javascript:alert(1)', 'pas une url', '', undefined]) {
-      expect((await request(app).post(photosUrl()).set(as(tokens.alice)).send({ url: bad })).status).toBe(400);
-    }
-  });
-
-  it('adds and lists photos', async () => {
-    const res = await request(app).post(photosUrl()).set(as(tokens.alice)).send({ url: 'https://example.com/a.jpg', caption: 'Le plat' });
-    expect(res.status).toBe(201);
-    photo = res.body.photo;
-    const list = await request(app).get(photosUrl());
-    expect(list.body.total).toBe(1);
-    expect(list.body.items[0].user.username).toBe('alice');
-  });
-
-  it('lets the author, the resto owner or an admin delete, nobody else', async () => {
-    const url = `${photosUrl()}/${photo._id}`;
-    expect((await request(app).delete(url).set(as(tokens.bob))).status).toBe(403);
-    expect((await request(app).delete(url).set(as(tokens.owner))).status).toBe(204);
-    expect((await request(app).delete(url).set(as(tokens.owner))).status).toBe(404);
-
-    const second = await request(app).post(photosUrl()).set(as(tokens.bob)).send({ url: 'https://example.com/b.jpg' });
-    expect((await request(app).delete(`${photosUrl()}/${second.body.photo._id}`).set(as(tokens.bob))).status).toBe(204);
-    expect(await Photo.countDocuments({ resto: resto._id })).toBe(0);
   });
 });

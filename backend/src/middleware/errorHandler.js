@@ -4,9 +4,11 @@ function notFound(req, res) {
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  const status = err.status || (['ValidationError', 'CastError'].includes(err.name) ? 400 : 500);
-  if (status >= 500) console.error(err);
-  res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
+  const status = err.status || (err.code === 'LIMIT_FILE_SIZE' ? 413 : err.name === 'MulterError' ? 400 : ['ValidationError', 'CastError'].includes(err.name) ? 400 : 500);
+  // seule une vraie erreur interne (500) est masquée ; un 502 (service externe indisponible) garde son message
+  if (status === 500) console.error(err);
+  else if (status > 500) console.warn(``);
+  res.status(status).json({ error: status === 500 ? 'Internal server error' : err.message });
 }
 
 module.exports = { notFound, errorHandler };

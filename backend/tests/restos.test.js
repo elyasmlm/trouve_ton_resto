@@ -195,3 +195,35 @@ describe('write access', () => {
     expect(await OpenHours.countDocuments({ resto: created._id })).toBe(0);
   });
 });
+describe('free-text fields and daily limit', () => {
+  const base = { name: 'Chez Test', location: address('Paris'), price_range: '€' };
+  let user;
+
+  beforeAll(async () => {
+    user = await signup('carl');
+  });
+
+  it('accepts a clean phone, website and tags', async () => {
+    const res = await request(app)
+      .post('/api/restos')
+      .set(as(user))
+      .send({ ...base, phone_numbers: ['01 23 45 67 89'], website: 'https://chez-test.fr', tags: ['terrasse', ' brunch '] });
+    expect(res.status).toBe(201);
+    expect(res.body.resto).toMatchObject({ phone_numbers: ['01 23 45 67 89'], website: 'https://chez-test.fr', tags: ['terrasse', 'brunch'] });
+  });
+
+  it('rejects dangerous or oversized values', async () => {
+    for (const extra of [{ website: 'javascript:alert(1)' }, { website: 'ftp://x.fr' }, { website: 'pas un lien' }, { phone_numbers: ['9'.repeat(31)] }, { tags: ['t'.repeat(31)] }]) {
+      expect((await request(app).post('/api/restos').set(as(user)).send({ ...base, ...extra })).status).toBe(400);
+    }
+  });
+
+  it('limits a user to 10 new restos a day, but not admins', async () => {
+    const spammer = await signup('spammer');
+    for (let i = 0; i < 10; i += 1) {
+      expect((await request(app).post('/api/restos').set(as(spammer)).send({ ...base, name: `Spam ${i}` })).status).toBe(201);
+    }
+    expect((await request(app).post('/api/restos').set(as(spammer)).send({ ...base, name: 'Spam 11' })).status).toBe(429);
+    expect((await request(app).post('/api/restos').set(as(tokens.admin)).send({ ...base, name: 'Admin 1' })).status).toBe(201);
+  });
+});

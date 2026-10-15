@@ -190,7 +190,7 @@ async function attachPhotos(items) {
   for (const p of photos) {
     const key = String(p.resto);
     const list = byResto.get(key) || [];
-    if (list.length < 5) list.push({ url: p.url, caption: p.caption });
+    if (list.length < 5) list.push({ url: p.url, thumb: p.thumb, caption: p.caption });
     byResto.set(key, list);
   }
   for (const r of items) r.photos = byResto.get(String(r._id)) || [];

@@ -55,9 +55,9 @@ const restoSchema = new mongoose.Schema(
       google_maps: String,
       tripadvisor: String,
     },
-    phone_numbers: [String],
-    website: String,
-    tags: [String],
+    phone_numbers: [{ type: String, trim: true, maxlength: 30 }],
+    website: { type: String, trim: true, maxlength: 300, match: [/^https?:\/\/\S+$/i, 'website must be an http(s) link'] },
+    tags: [{ type: String, trim: true, maxlength: 30 }],
   },
   {
     collection: 'restos',
