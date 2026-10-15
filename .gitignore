@@ -5,3 +5,4 @@ data/
 backend/.env
 data_old_*/
 backend/uploads/
+backend/.cache/

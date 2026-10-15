@@ -12,7 +12,22 @@ const cuisineNames = [
   ["Libanaise", "Mezzés, grillades et falafels"],
   ["Indienne", "Currys, tandoori et street food"],
   ["Burger", "Burgers et fast-food"],
-  ["Végétarienne", "Cuisine végétarienne et vegan"]
+  ["Végétarienne", "Cuisine végétarienne et vegan"],
+  ["Orientale", "Cuisine du Moyen-Orient"],
+  ["Chinoise", "Cuisine chinoise, dim sum et wok"],
+  ["Thaïlandaise", "Cuisine thaïlandaise"],
+  ["Vietnamienne", "Cuisine vietnamienne, pho et bo bun"],
+  ["Coréenne", "Cuisine coréenne et barbecue coréen"],
+  ["Mexicaine", "Tacos, burritos et cuisine tex-mex"],
+  ["Marocaine", "Couscous, tajines et cuisine du Maghreb"],
+  ["Turque", "Kebabs, grillades et cuisine turque"],
+  ["Grecque", "Cuisine grecque"],
+  ["Espagnole", "Tapas et cuisine espagnole"],
+  ["Africaine", "Cuisine d'Afrique de l'Ouest, du Centre et de l'Est"],
+  ["Américaine", "Grillades, steakhouses et barbecue"],
+  ["Fruits de mer", "Poissons, huîtres et fruits de mer"],
+  ["Crêperie", "Crêpes et galettes"],
+  ["Méditerranéenne", "Cuisine méditerranéenne"]
 ];
 const cuisineId = {};
 cuisineNames.forEach(([cuisine_name, description]) => {

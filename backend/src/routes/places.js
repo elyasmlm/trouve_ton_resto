@@ -18,9 +18,21 @@ function limit(req, res, next) {
   next();
 }
 
+// GET /api/places/search?name=Le Procope&city=Paris[&lat=48.85&lng=2.34]   (ou l'ancien ?q=Le Procope Paris)
 router.get('/search', requireAuth, limit, async (req, res, next) => {
   try {
-    res.json({ items: await searchPlaces(req.query.q) });
+    const text = (v) => (typeof v === 'string' ? v : '');
+    const number = (v, min, max) => {
+      if (v === undefined || v === '') return undefined;
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < min || n > max) throw httpError(400, 'lat or lng is invalid');
+      return n;
+    };
+    const lat = number(req.query.lat, -90, 90);
+    const lng = number(req.query.lng, -180, 180);
+    if ((lat === undefined) !== (lng === undefined)) throw httpError(400, 'lat and lng must be given together');
+    const name = text(req.query.name) || text(req.query.q);
+    res.json({ items: await searchPlaces({ name, city: text(req.query.city), lat, lng }) });
   } catch (err) {
     next(err);
   }

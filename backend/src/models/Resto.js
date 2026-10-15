@@ -19,6 +19,7 @@ const geoSchema = new mongoose.Schema(
 );
 
 const score = { type: Number, min: 0, max: 5 };
+const link = { type: String, trim: true, maxlength: 300, match: [/^https?:\/\/\S+$/i, 'social links must be http(s) links'] };
 const str = { type: String, trim: true };
 
 const restoSchema = new mongoose.Schema(
@@ -46,15 +47,7 @@ const restoSchema = new mongoose.Schema(
     halal_certificate: { type: Boolean, default: false },
     vegan: { type: Boolean, default: false },
     added_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    social_networks: {
-      facebook: String,
-      instagram: String,
-      twitter: String,
-      tiktok: String,
-      youtube: String,
-      google_maps: String,
-      tripadvisor: String,
-    },
+    social_networks: { facebook: link, instagram: link, twitter: link, tiktok: link, youtube: link, google_maps: link, tripadvisor: link },
     phone_numbers: [{ type: String, trim: true, maxlength: 30 }],
     website: { type: String, trim: true, maxlength: 300, match: [/^https?:\/\/\S+$/i, 'website must be an http(s) link'] },
     tags: [{ type: String, trim: true, maxlength: 30 }],

@@ -564,3 +564,17 @@ button:disabled { cursor: not-allowed; }
   .form-grid { grid-template-columns: 1fr 1fr; }
   .photos__grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---------- Préremplissage d'un resto ---------- */
+.place__form { display: grid; gap: 12px; }
+.place__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.place__known { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.place__tag { font-style: normal; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; padding: 1px 8px; border-radius: 6px; background: var(--taupe); color: var(--brown-deep); }
+.place__tag--cuisine { background: var(--yellow-soft); }
+.prefill { display: grid; gap: 4px; }
+.prefill span { color: var(--ink-soft); font-size: 0.92rem; }
+.hours { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.hours li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--taupe); font-size: 0.95rem; }
+.hours li span:first-child { font-weight: 600; color: var(--brown-deep); }
+.credits { color: var(--ink-soft); font-size: 0.78rem; line-height: 1.4; }
+.credits a { color: var(--brown); }

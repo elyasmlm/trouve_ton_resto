@@ -227,3 +227,23 @@ describe('free-text fields and daily limit', () => {
     expect((await request(app).post('/api/restos').set(as(tokens.admin)).send({ ...base, name: 'Admin 1' })).status).toBe(201);
   });
 });
+
+describe('social links', () => {
+  const base = { name: 'Chez Liens', location: address('Paris') };
+  let user;
+  beforeAll(async () => {
+    user = await signup('lena');
+  });
+
+  it('accepts http(s) links', async () => {
+    const res = await request(app).post('/api/restos').set(as(user)).send({ ...base, social_networks: { instagram: 'https://www.instagram.com/chezliens', facebook: 'http://facebook.com/chezliens' } });
+    expect(res.status).toBe(201);
+    expect(res.body.resto.social_networks).toMatchObject({ instagram: 'https://www.instagram.com/chezliens' });
+  });
+
+  it('rejects anything else, so a link can never run script when displayed', async () => {
+    for (const instagram of ['javascript:alert(1)', 'data:text/html,x', '@chezliens', 'ftp://x.fr', 'https://' + 'x'.repeat(300)]) {
+      expect((await request(app).post('/api/restos').set(as(user)).send({ ...base, social_networks: { instagram } })).status).toBe(400);
+    }
+  });
+});
