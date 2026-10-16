@@ -10,6 +10,8 @@ import Lists from './pages/Lists.jsx'
 import ListDetail from './pages/ListDetail.jsx'
 import AddResto from './pages/AddResto.jsx'
 import Admin from './pages/Admin.jsx'
+import EditResto from './pages/EditResto.jsx'
+import RestoDetail from './pages/RestoDetail.jsx'
 import Notifications from './pages/Notifications.jsx'
 import NotFound from './pages/NotFound.jsx'
 import Search from './pages/Search.jsx'
@@ -37,6 +39,15 @@ export default function App() {
           }
         />
         <Route path="listes/:id" element={<ListDetail />} />
+        <Route path="restos/:id" element={<RestoDetail />} />
+        <Route
+          path="restos/:id/modifier"
+          element={
+            <RequireAuth>
+              <EditResto />
+            </RequireAuth>
+          }
+        />
         <Route
           path="notifications"
           element={

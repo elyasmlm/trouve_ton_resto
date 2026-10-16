@@ -161,7 +161,7 @@ export default function ReelCard({ resto: r, cuisineNames = [], onTag }) {
           )}
         </div>
         <h2 className="reel__title">
-          {r.name}
+          <Link to={`/restos/${r._id}`} className="resto__link">{r.name}</Link>
           {r.verified && <BadgeCheckIcon className="badge" role="img" aria-label="Resto vérifié" />}
         </h2>
         <p className="reel__meta">

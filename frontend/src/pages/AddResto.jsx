@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client.js'
 import { errorMessage } from '../api/errors.js'
@@ -6,53 +6,14 @@ import { CheckCircleIcon, MapPinIcon } from '../components/Icons.jsx'
 import PhotoPicker from '../components/PhotoPicker.jsx'
 import PlaceCredits from '../components/PlaceCredits.jsx'
 import PlaceSearch from '../components/PlaceSearch.jsx'
+import { Field } from '../components/FormField.jsx'
+import RestoFields from '../components/RestoFields.jsx'
+import { WEEK, asUrl, locate, tagList } from '../utils/restoForm.js'
 
-const EMPTY = { name: '', street: '', zip: '', city: '', state: '', country: 'FR', cuisines: [], price: '', meals: [], vegan: false, halal: false, phone: '', website: '', instagram: '', facebook: '', tags: '' }
+const EMPTY = { name: '', street: '', zip: '', city: '', state: '', country: 'FR', cuisines: [], price: '', meals: [], vegan: false, halal: false, phone: '', website: '', description: '', instagram: '', facebook: '', tags: '' }
 
-const COUNTRIES = [['FR', 'France'], ['BE', 'Belgique'], ['CH', 'Suisse'], ['LU', 'Luxembourg'], ['CA', 'Canada'], ['MA', 'Maroc'], ['DZ', 'Algérie'], ['TN', 'Tunisie'], ['ES', 'Espagne'], ['IT', 'Italie'], ['PT', 'Portugal'], ['DE', 'Allemagne'], ['GB', 'Royaume-Uni']]
-const MEALS = [['breakfast', 'Petit-déj'], ['brunch', 'Brunch'], ['lunch', 'Déjeuner'], ['dinner', 'Dîner'], ['snack', 'Snack'], ['late_night', 'Tard le soir']]
-const PRICES = [['€', 'Petit prix'], ['€€', 'Abordable'], ['€€€', 'On se fait plaisir'], ['€€€€', 'Grande occasion']]
-
-const toggle = (list, value) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value])
-
-const WEEK = [['mon', 'Lundi'], ['tue', 'Mardi'], ['wed', 'Mercredi'], ['thu', 'Jeudi'], ['fri', 'Vendredi'], ['sat', 'Samedi'], ['sun', 'Dimanche']]
 const showSlots = (slots = []) =>
   !slots.length ? 'Fermé' : slots.map((s) => (s.open === s.close ? '24 h/24' : `${s.open}–${s.close}`)).join(' · ')
-
-// « instagram.com/monresto » -> « https://instagram.com/monresto » ; ce qui n'est pas un lien valide est ignoré
-function asUrl(value) {
-  const v = value.trim()
-  if (!v) return undefined
-  try {
-    const url = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`)
-    return url.hostname.includes('.') ? url.toString() : undefined
-  } catch {
-    return undefined
-  }
-}
-
-// Les adresses saisies à la main n'ont pas de coordonnées : on essaie de les retrouver (sans bloquer si ça échoue)
-async function locate(form) {
-  try {
-    const q = `${form.street}, ${form.zip} ${form.city}`
-    const res = await api.get('/places/search', { params: { q } })
-    const hit = res.data.items[0]
-    return hit ? { lat: hit.lat, lng: hit.lng } : null
-  } catch {
-    return null
-  }
-}
-
-function Field({ label, children, hint }) {
-  const id = useId()
-  return (
-    <div className="field">
-      <label htmlFor={id}>{label}</label>
-      {children(id)}
-      {hint && <span className="field__hint">{hint}</span>}
-    </div>
-  )
-}
 
 export default function AddResto() {
   const [phase, setPhase] = useState('search') // search | form | photos | done
@@ -167,7 +128,7 @@ export default function AddResto() {
     let created = false
     try {
       if (!resto) {
-        const geo = position || (await locate(form))
+        const geo = position || (await locate(api, form))
         const web = form.website.trim()
         const socials = { instagram: asUrl(form.instagram), facebook: asUrl(form.facebook) }
         const hasSocials = Object.values(socials).some(Boolean)
@@ -179,11 +140,12 @@ export default function AddResto() {
           meal_types: form.meals,
           vegan: form.vegan,
           halal_certificate: form.halal,
+          ...(form.description.trim() && { description: form.description.trim() }),
           ...(form.price && { price_range: form.price }),
           ...(form.phone.trim() && { phone_numbers: [form.phone.trim()] }),
           ...(web && { website: /^https?:\/\//i.test(web) ? web : `https://${web}` }),
           ...(hasSocials && { social_networks: Object.fromEntries(Object.entries(socials).filter(([, v]) => v)) }),
-          tags: form.tags.split(/[,#\n]/).map((t) => t.trim().toLowerCase()).filter(Boolean).slice(0, 15),
+          tags: tagList(form.tags),
         }
         resto = (await api.post('/restos', body)).data.resto
         created = true
@@ -325,106 +287,7 @@ export default function AddResto() {
             </div>
           )}
 
-          <fieldset className="fieldset">
-            <legend>Adresse</legend>
-            <Field label="Rue">{(id) => <input id={id} value={form.street} onChange={set('street')} required autoComplete="street-address" />}</Field>
-            <div className="form-grid">
-              <Field label="Code postal">{(id) => <input id={id} value={form.zip} onChange={set('zip')} required inputMode="numeric" autoComplete="postal-code" maxLength={12} />}</Field>
-              <Field label="Ville">{(id) => <input id={id} value={form.city} onChange={set('city')} required autoComplete="address-level2" />}</Field>
-            </div>
-            <div className="form-grid">
-              <Field label="Région">{(id) => <input id={id} value={form.state} onChange={set('state')} required autoComplete="address-level1" />}</Field>
-              <Field label="Pays">
-                {(id) => (
-                  <select id={id} value={form.country} onChange={set('country')}>
-                    {COUNTRIES.map(([code, label]) => (
-                      <option key={code} value={code}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-            </div>
-          </fieldset>
-
-          {cuisines.length > 0 && (
-            <fieldset className="fieldset">
-              <legend>Type de cuisine</legend>
-              <ul className="pills">
-                {cuisines.map((c) => (
-                  <li key={c._id}>
-                    <button type="button" className="pill" aria-pressed={form.cuisines.includes(c._id)} onClick={() => setForm((f) => ({ ...f, cuisines: toggle(f.cuisines, c._id) }))}>
-                      {c.cuisine_name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </fieldset>
-          )}
-
-          <fieldset className="fieldset">
-            <legend>Budget</legend>
-            <ul className="pills">
-              {PRICES.map(([value, hint]) => (
-                <li key={value}>
-                  <button type="button" className="pill pill--budget" aria-pressed={form.price === value} onClick={() => setForm((f) => ({ ...f, price: f.price === value ? '' : value }))}>
-                    <b>{value}</b> <span>{hint}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </fieldset>
-
-          <fieldset className="fieldset">
-            <legend>On y mange…</legend>
-            <ul className="pills">
-              {MEALS.map(([value, label]) => (
-                <li key={value}>
-                  <button type="button" className="pill" aria-pressed={form.meals.includes(value)} onClick={() => setForm((f) => ({ ...f, meals: toggle(f.meals, value) }))}>
-                    {label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </fieldset>
-
-          <fieldset className="fieldset diet" id="diet" aria-describedby="diet-help">
-            <legend>Halal ou option végé (obligatoire)</legend>
-            <p id="diet-help" className="field__hint">
-              Chaque resto est halal ou propose au moins une option végétarienne. Coche ce qui correspond.
-            </p>
-            <div className="manage">
-              <label className="switch">
-                <input type="checkbox" checked={form.halal} onChange={set('halal')} aria-invalid={dietError || undefined} />
-                <span>Halal</span>
-              </label>
-              <label className="switch">
-                <input type="checkbox" checked={form.vegan} onChange={set('vegan')} aria-invalid={dietError || undefined} />
-                <span>Option végétarienne / vegan</span>
-              </label>
-            </div>
-            {dietError && (
-              <p className="alert" role="alert">
-                Un resto doit être halal ou proposer une option végétarienne. Coche au moins l’une des deux cases.
-              </p>
-            )}
-          </fieldset>
-
-          <fieldset className="fieldset">
-            <legend>Pour les contacter (facultatif)</legend>
-            <div className="form-grid">
-              <Field label="Téléphone">{(id) => <input id={id} type="tel" value={form.phone} onChange={set('phone')} autoComplete="tel" maxLength={30} />}</Field>
-              <Field label="Site web">{(id) => <input id={id} type="text" inputMode="url" autoCapitalize="none" autoComplete="url" value={form.website} onChange={set('website')} placeholder="ex. monresto.fr" maxLength={300} />}</Field>
-            </div>
-            <div className="form-grid">
-              <Field label="Instagram">{(id) => <input id={id} type="text" inputMode="url" autoCapitalize="none" value={form.instagram} onChange={set('instagram')} placeholder="instagram.com/…" maxLength={300} />}</Field>
-              <Field label="Facebook">{(id) => <input id={id} type="text" inputMode="url" autoCapitalize="none" value={form.facebook} onChange={set('facebook')} placeholder="facebook.com/…" maxLength={300} />}</Field>
-            </div>
-            <Field label="Mots-clés" hint="Séparés par des virgules : terrasse, pizza, brunch…">
-              {(id) => <input id={id} value={form.tags} onChange={set('tags')} />}
-            </Field>
-          </fieldset>
+          <RestoFields form={form} set={set} setForm={setForm} cuisines={cuisines} dietError={dietError} />
 
           {hours && (
             <fieldset className="fieldset">

@@ -18,7 +18,7 @@ const router = express.Router();
 
 const EDITABLE = [
   'name', 'price_range', 'cuisines', 'meal_types', 'halal_certificate', 'vegan',
-  'social_networks', 'phone_numbers', 'website', 'tags',
+  'social_networks', 'phone_numbers', 'website', 'tags', 'description',
 ];
 const ADMIN_ONLY = ['verified', 'sponsored', 'sponsored_until', 'status'];
 const LOCATION_FIELDS = ['street', 'city', 'state', 'zip', 'country'];
@@ -40,7 +40,8 @@ const touchesContent = (body) => EDITABLE.some((key) => body[key] !== undefined)
 
 function applyBody(resto, body, isAdmin) {
   for (const key of isAdmin ? [...EDITABLE, ...ADMIN_ONLY] : EDITABLE) {
-    if (body[key] !== undefined) resto.set(key, body[key]);
+    // une chaîne vide retire la valeur (vider le site web, le budget ou la description depuis « Modifier la fiche »)
+    if (body[key] !== undefined) resto.set(key, body[key] === '' ? undefined : body[key]);
   }
   if (body.location && typeof body.location === 'object') {
     for (const key of LOCATION_FIELDS) {

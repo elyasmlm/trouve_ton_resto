@@ -179,6 +179,7 @@ ensureCollection("restos", {
     social_networks: SOCIAL,
     phone_numbers: { bsonType: "array", items: { bsonType: "string" } },
     website: { bsonType: "string" },
+    description: { bsonType: "string", maxLength: 1000 },
     tags: { bsonType: "array", items: { bsonType: "string" } }
   }
 });

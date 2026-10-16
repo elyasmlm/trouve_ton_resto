@@ -79,7 +79,9 @@ export default function RestoCard({ resto: r, cuisineNames = [], index = 0, extr
 
       <div className="resto__body">
         <div className="resto__title">
-          <h2>{r.name}</h2>
+          <h2>
+            <Link to={`/restos/${r._id}`} className="resto__link">{r.name}</Link>
+          </h2>
           {r.verified && <BadgeCheckIcon className="badge" role="img" aria-label="Resto vérifié" />}
         </div>
         {user ? (

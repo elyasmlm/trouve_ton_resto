@@ -13,3 +13,7 @@ export const isVideo = (url) => /\.(mp4|webm|mov)(\?|$)/i.test(url || '')
 
 // Seuls les liens http(s) sont acceptés comme site web
 export const safeWebsite = (url) => (typeof url === 'string' && /^https?:\/\//i.test(url) ? url : null)
+
+// Mêmes règles que canEdit côté API : admin, propriétaire du resto, ou auteur tant que la fiche n'est pas vérifiée
+export const canEditResto = (user, r) =>
+  Boolean(user && (user.role === 'admin' || (user.restos || []).includes(r._id) || (!r.verified && r.added_by === user._id)))

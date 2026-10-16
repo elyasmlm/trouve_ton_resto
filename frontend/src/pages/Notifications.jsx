@@ -15,8 +15,8 @@ function ago(date) {
   return 'à l’instant'
 }
 
-// Où mène une notification (les fiches resto n'ont pas encore de page dédiée)
-const target = (n) => (n.data?.list ? `/listes/${n.data.list}` : null)
+// Où mène une notification : la liste, ou à défaut la fiche du resto concerné
+const target = (n) => (n.data?.list ? `/listes/${n.data.list}` : n.data?.resto ? `/restos/${n.data.resto}` : null)
 
 export default function Notifications() {
   const { setUnread, refresh } = useNotifications()
