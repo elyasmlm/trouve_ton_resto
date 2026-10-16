@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
-import { BellIcon, ListIcon, LogoMark, PlusIcon, SearchIcon } from './Icons.jsx'
+import { ListIcon, LogoMark, PlusIcon, SearchIcon } from './Icons.jsx'
+import NotificationBell from './NotificationBell.jsx'
 import { NAV_ITEMS } from './navItems.js'
 
 function Brand() {
@@ -59,9 +60,7 @@ function Header() {
           </NavLink>
           {user ? (
             <>
-              <NavLink to="/notifications" className="icon-btn" aria-label="Notifications">
-                <BellIcon />
-              </NavLink>
+              <NotificationBell className="icon-btn" />
               <Link to="/compte" className="pdp header__desktop" aria-label="Mon compte">
                 {user.username.charAt(0).toUpperCase()}
               </Link>

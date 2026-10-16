@@ -701,3 +701,17 @@ html.search-mode .footer { display: none; }
   .leaflet-top.leaflet-left { top: 140px; }
 }
 @media (prefers-reduced-motion: reduce) { .pin, .mapcard { transition: none; animation: none; } }
+/* Notifications */
+.bell { position: relative; }
+.bell__dot { position: absolute; top: 3px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #c8452d; color: #fff; font-size: 0.68rem; font-weight: 800; display: grid; place-items: center; border: 2px solid var(--page); line-height: 1; }
+.notifs { list-style: none; padding: 0; margin: 18px 0; display: grid; gap: 10px; }
+.notifs__item { display: flex; align-items: stretch; background: var(--cream); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.notifs__item--new { border-left: 5px solid var(--yellow); background: #fff8e1; }
+.notifs__main { flex: 1; min-width: 0; display: grid; gap: 4px; text-align: left; padding: 14px 16px; background: none; border: 0; font: inherit; color: var(--ink); text-decoration: none; cursor: pointer; }
+.notifs__item--new .notifs__msg { font-weight: 700; }
+.notifs__time { font-size: 0.8rem; color: var(--ink-soft); }
+.notifs__del { width: 44px; background: none; border: 0; color: var(--ink-soft); font-size: 1.4rem; cursor: pointer; }
+.notifs__del:hover { color: var(--brown-deep); background: rgb(67 45 37 / 8%); }
+.notifs__empty { text-align: center; display: grid; justify-items: center; gap: 10px; padding: 40px 0; color: var(--ink-soft); }
+.notifs__empty svg { width: 44px; height: 44px; }
+.notifs__empty p { max-width: 36ch; }

@@ -13,6 +13,7 @@ const listRoutes = require('./routes/lists');
 const { attachUser } = require('./middleware/auth');
 const restoRoutes = require('./routes/restos');
 const cuisineRoutes = require('./routes/cuisines');
+const notificationRoutes = require('./routes/notifications');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/restos', restoRoutes);
 app.use('/api/cuisines', cuisineRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

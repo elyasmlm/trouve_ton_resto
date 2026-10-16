@@ -5,6 +5,7 @@ const Photo = require('../models/Photo');
 const Review = require('../models/Review');
 const Report = require('../models/Report');
 const { requireAuth, requireRole, httpError } = require('../middleware/auth');
+const { notify } = require('../services/notifications');
 const { removeImageFiles } = require('../services/images');
 const { recomputeInsideRating } = require('../services/ratings');
 const { pageParams, pageResult } = require('../utils/pagination');
@@ -51,6 +52,10 @@ async function moderate(req, res, next, update) {
     if (!validId(req.params.id)) throw httpError(404, 'Resto not found');
     const resto = await Resto.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!resto) throw httpError(404, 'Resto not found');
+    if (resto.added_by && !resto.added_by.equals(req.user._id)) {
+      if (resto.verified) await notify(resto.added_by, 'resto_verified', `Ta fiche « ${resto.name} » a été validée, elle est visible par tous.`, { resto: resto._id });
+      else if (resto.status === 'rejected') await notify(resto.added_by, 'resto_rejected', `Ta fiche « ${resto.name} » a été refusée : ${resto.rejection_reason}`, { resto: resto._id });
+    }
     res.json({ resto });
   } catch (err) {
     next(err);
@@ -136,14 +141,21 @@ router.post('/reports/:id/resolve', async (req, res, next) => {
     if (!report) throw httpError(404, 'Report not found');
 
     if (action === 'remove') {
+      let author;
       if (report.type === 'photo') {
         const photo = await Photo.findByIdAndDelete(report.target);
         if (photo) await removeImageFiles(photo).catch(() => {});
+        author = photo?.user;
       } else if (report.type === 'review') {
-        if (await Review.findByIdAndDelete(report.target)) await recomputeInsideRating(report.resto);
+        const review = await Review.findByIdAndDelete(report.target);
+        if (review) await recomputeInsideRating(report.resto);
+        author = review?.user;
       } else {
-        await Resto.updateOne({ _id: report.target }, { $set: { verified: false, status: 'rejected', rejection_reason: `Signalement : ${report.reason}` } });
+        const resto = await Resto.findByIdAndUpdate(report.target, { $set: { verified: false, status: 'rejected', rejection_reason: `Signalement : ${report.reason}` } });
+        author = resto?.added_by;
       }
+      const what = { photo: 'Ta photo', review: 'Ton avis', resto: 'Ta fiche' }[report.type];
+      if (author) await notify(author, 'content_removed', `${what} a été retiré(e) suite à un signalement.`, { resto: report.resto });
     }
 
     const { modifiedCount } = await Report.updateMany(
