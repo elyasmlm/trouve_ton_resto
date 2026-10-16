@@ -52,6 +52,7 @@ const restoSchema = new mongoose.Schema(
     social_networks: { facebook: link, instagram: link, twitter: link, tiktok: link, youtube: link, google_maps: link, tripadvisor: link },
     phone_numbers: [{ type: String, trim: true, maxlength: 30 }],
     website: { type: String, trim: true, maxlength: 300, match: [/^https?:\/\/\S+$/i, 'website must be an http(s) link'] },
+    description: { type: String, trim: true, maxlength: 1000 },
     tags: [{ type: String, trim: true, maxlength: 30 }],
     search_norm: String, // nom, ville, code postal et mots-clés sans accents ni majuscules (voir plus bas)
   },

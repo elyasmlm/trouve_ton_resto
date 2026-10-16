@@ -212,6 +212,27 @@ describe('free-text fields and daily limit', () => {
     expect(res.body.resto).toMatchObject({ phone_numbers: ['01 23 45 67 89'], website: 'https://chez-test.fr', tags: ['terrasse', 'brunch'] });
   });
 
+  it('stores a trimmed description, editable by the author, and rejects one over 1000 characters', async () => {
+    const created = await request(app).post('/api/restos').set(as(user)).send({ ...base, description: '  Cuisine maison, terrasse au calme.  ' });
+    expect(created.status).toBe(201);
+    expect(created.body.resto.description).toBe('Cuisine maison, terrasse au calme.');
+    const id = created.body.resto._id;
+    const edited = await request(app).patch(`/api/restos/${id}`).set(as(user)).send({ description: 'Nouvelle description' });
+    expect(edited.body.resto.description).toBe('Nouvelle description');
+    expect((await request(app).get(`/api/restos/${id}`)).body.resto.description).toBe('Nouvelle description');
+    expect((await request(app).patch(`/api/restos/${id}`).set(as(user)).send({ description: 'x'.repeat(1001) })).status).toBe(400);
+  });
+
+  it('clears an optional field when an empty string is sent, and still requires a name', async () => {
+    const id = (await request(app).post('/api/restos').set(as(user)).send({ ...base, website: 'https://chez-test.fr', price_range: '€€', description: 'Texte' })).body.resto._id;
+    const res = await request(app).patch(`/api/restos/${id}`).set(as(user)).send({ website: '', price_range: '', description: '' });
+    expect(res.status).toBe(200);
+    expect(res.body.resto.website).toBeUndefined();
+    expect(res.body.resto.price_range).toBeUndefined();
+    expect(res.body.resto.description).toBeUndefined();
+    expect((await request(app).patch(`/api/restos/${id}`).set(as(user)).send({ name: '' })).status).toBe(400);
+  });
+
   it('rejects dangerous or oversized values', async () => {
     for (const extra of [{ website: 'javascript:alert(1)' }, { website: 'ftp://x.fr' }, { website: 'pas un lien' }, { phone_numbers: ['9'.repeat(31)] }, { tags: ['t'.repeat(31)] }]) {
       expect((await request(app).post('/api/restos').set(as(user)).send({ ...base, ...extra })).status).toBe(400);

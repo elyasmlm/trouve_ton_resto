@@ -41,6 +41,15 @@ router.get('/', loadResto, async (req, res, next) => {
   }
 });
 
+// L'avis de l'utilisateur connecté sur ce resto (null s'il n'en a pas écrit)
+router.get('/mine', requireAuth, loadResto, async (req, res, next) => {
+  try {
+    res.json({ review: await Review.findOne({ resto: req.resto._id, user: req.user._id }).lean() });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/', requireAuth, loadResto, async (req, res, next) => {
   try {
     if ((req.user.restos || []).some((id) => id.equals(req.resto._id))) {

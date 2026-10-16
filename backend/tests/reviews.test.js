@@ -84,6 +84,13 @@ describe('reviews', () => {
     expect(res.status).toBe(403);
   });
 
+  it('returns my own review, or null, and requires authentication', async () => {
+    expect((await request(app).get(`${reviewsUrl()}/mine`)).status).toBe(401);
+    const mine = await request(app).get(`${reviewsUrl()}/mine`).set(as(tokens.alice));
+    expect(mine.body.review).toMatchObject({ rating: 4, comment: 'Très bon' });
+    expect((await request(app).get(`${reviewsUrl()}/mine`).set(as(tokens.admin))).body.review).toBeNull();
+  });
+
   it('lists reviews publicly with the author username only', async () => {
     const res = await request(app).get(reviewsUrl());
     expect(res.status).toBe(200);
