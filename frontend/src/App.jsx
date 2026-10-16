@@ -10,10 +10,9 @@ import Lists from './pages/Lists.jsx'
 import ListDetail from './pages/ListDetail.jsx'
 import AddResto from './pages/AddResto.jsx'
 import Admin from './pages/Admin.jsx'
-import ComingSoon from './pages/ComingSoon.jsx'
+import Notifications from './pages/Notifications.jsx'
 import NotFound from './pages/NotFound.jsx'
 import Search from './pages/Search.jsx'
-import { BellIcon } from './components/Icons.jsx'
 
 export default function App() {
   return (
@@ -42,11 +41,7 @@ export default function App() {
           path="notifications"
           element={
             <RequireAuth>
-              <ComingSoon
-                icon={BellIcon}
-                title="Notifications"
-                text="Tu seras prévenu ici quand un resto répond à ton avis ou qu’un badge se débloque."
-              />
+              <Notifications />
             </RequireAuth>
           }
         />

@@ -6,13 +6,16 @@ import './index.css'
 import App from './App.jsx'
 import AuthProvider from './auth/AuthProvider.jsx'
 import ListsProvider from './lists/ListsProvider.jsx'
+import NotificationsProvider from './notifications/NotificationsProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
         <ListsProvider>
-          <App />
+          <NotificationsProvider>
+            <App />
+          </NotificationsProvider>
         </ListsProvider>
       </AuthProvider>
     </BrowserRouter>

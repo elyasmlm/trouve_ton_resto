@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { GEO_TEXT } from '../hooks/useGeolocation.js'
-import { BellIcon, LogoMark, SearchIcon } from '../components/Icons.jsx'
+import { LogoMark, SearchIcon } from '../components/Icons.jsx'
 import Loader from '../components/Loader.jsx'
+import NotificationBell from '../components/NotificationBell.jsx'
 import ReelCard from '../components/ReelCard.jsx'
 import TrendChips from '../components/TrendChips.jsx'
 
@@ -49,9 +50,7 @@ export default function FeedReels({ f }) {
             <SearchIcon />
           </Link>
           {user ? (
-            <Link to="/notifications" className="reels__icon" aria-label="Notifications">
-              <BellIcon />
-            </Link>
+            <NotificationBell className="reels__icon" plain />
           ) : (
             <Link to="/connexion" className="reels__login">
               Connexion

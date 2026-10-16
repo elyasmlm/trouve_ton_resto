@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const List = require('../models/List');
+const { notify } = require('../services/notifications');
 const Resto = require('../models/Resto');
 const User = require('../models/User');
 const { requireAuth, httpError } = require('../middleware/auth');
@@ -164,7 +165,9 @@ router.post('/:id/collaborators', requireAuth, loadList, requireOwner, requireCu
     if (req.list.collaborators.length >= MAX_COLLABORATORS && !req.list.collaborators.some((c) => sameId(c._id, other._id))) {
       throw httpError(400, `A list can have up to ${MAX_COLLABORATORS} collaborators`);
     }
+    const isNew = !req.list.collaborators.some((c) => sameId(c._id, other._id));
     await List.updateOne({ _id: req.list._id }, { $addToSet: { collaborators: other._id } });
+    if (isNew) await notify(other._id, 'list_invite', `${req.user.username} t’a invité à la liste « ${req.list.name} ».`, { list: req.list._id });
     res.json({ list: await reload(req.list._id, req.user._id) });
   } catch (err) {
     next(err);

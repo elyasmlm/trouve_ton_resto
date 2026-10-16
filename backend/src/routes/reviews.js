@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Review = require('../models/Review');
+const User = require('../models/User');
+const { notify } = require('../services/notifications');
 const loadResto = require('../middleware/loadResto');
 const { requireAuth, httpError } = require('../middleware/auth');
 const { recomputeInsideRating } = require('../services/ratings');
@@ -47,6 +49,9 @@ router.post('/', requireAuth, loadResto, async (req, res, next) => {
     const { rating, comment } = req.body || {};
     const review = await Review.create({ resto: req.resto._id, user: req.user._id, rating, comment, date: new Date() });
     await recomputeInsideRating(req.resto._id);
+    const owners = await User.find({ restos: req.resto._id }).distinct('_id');
+    const targets = [...owners, req.resto.added_by].filter((id) => id && !id.equals(req.user._id));
+    await notify(targets, 'new_review', `${req.user.username} a donné son avis sur ${req.resto.name}.`, { resto: req.resto._id, review: review._id });
     res.status(201).json({ review });
   } catch (err) {
     if (err.code === 11000) return next(httpError(409, 'You already reviewed this resto'));
