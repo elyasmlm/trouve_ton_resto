@@ -95,7 +95,7 @@ export default function Notifications() {
       {status === 'ok' && items.length === 0 && (
         <div className="notifs__empty">
           <BellIcon />
-          <p>Rien pour le moment. Tu seras prévenu ici d’une invitation à une liste, d’un avis sur ta fiche ou d’une décision de modération.</p>
+          <p>Rien pour le moment. Tu seras prévenu ici d’une invitation à une liste, d’un avis sur ta fiche, d’une réponse à ton avis ou d’une décision de modération.</p>
         </div>
       )}
 

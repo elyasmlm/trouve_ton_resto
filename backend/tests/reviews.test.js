@@ -8,6 +8,7 @@ const User = require('../src/models/User');
 const Resto = require('../src/models/Resto');
 const Rating = require('../src/models/Rating');
 const Review = require('../src/models/Review');
+const Notification = require('../src/models/Notification');
 
 let mongod;
 let resto;
@@ -82,6 +83,31 @@ describe('reviews', () => {
   it('forbids owners from reviewing their own resto', async () => {
     const res = await request(app).post(reviewsUrl()).set(as(tokens.owner)).send({ rating: 5 });
     expect(res.status).toBe(403);
+  });
+
+  it('lets the resto owner (or an admin) reply to a review, and warns the author once', async () => {
+    const url = `${reviewsUrl()}/${aliceReview._id}/reply`;
+    expect((await request(app).put(url).send({ text: 'Merci !' })).status).toBe(401);
+    expect((await request(app).put(url).set(as(tokens.bob)).send({ text: 'Je ne suis pas le patron' })).status).toBe(403);
+    expect((await request(app).put(url).set(as(tokens.owner)).send({ text: '   ' })).status).toBe(400);
+    expect((await request(app).put(url).set(as(tokens.owner)).send({ text: 'x'.repeat(1001) })).status).toBe(400);
+
+    const first = await request(app).put(url).set(as(tokens.owner)).send({ text: '  Merci pour votre visite !  ' });
+    expect(first.status).toBe(200);
+    expect(first.body.review.reply).toMatchObject({ text: 'Merci pour votre visite !', user: users.owner.id });
+
+    await request(app).put(url).set(as(tokens.admin)).send({ text: 'Réponse corrigée' }).expect(200);
+    const notes = await Notification.find({ user: users.alice.id, type: 'review_reply' });
+    expect(notes).toHaveLength(1);
+    expect(notes[0].message).toContain('Le Bistrot');
+
+    const listed = (await request(app).get(reviewsUrl())).body.items.find((r) => r._id === aliceReview._id);
+    expect(listed.reply.text).toBe('Réponse corrigée');
+
+    const removed = await request(app).delete(url).set(as(tokens.owner));
+    expect(removed.status).toBe(200);
+    expect(removed.body.review.reply).toBeUndefined();
+    expect((await request(app).delete(url).set(as(tokens.alice))).status).toBe(403);
   });
 
   it('returns my own review, or null, and requires authentication', async () => {
