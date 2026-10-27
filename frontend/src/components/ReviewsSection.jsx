@@ -5,6 +5,7 @@ import { errorMessage } from '../api/errors.js'
 import { useAuth } from '../auth/useAuth.js'
 import { fmt } from '../utils/resto.js'
 import Loader from './Loader.jsx'
+import ReportButton from './ReportButton.jsx'
 import StarRating from './StarRating.jsx'
 
 const date = (d) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -251,6 +252,7 @@ export default function ReviewsSection({ resto, onChange }) {
               <b>{r.user?.username || 'Utilisateur supprimé'}</b>
               <Stars value={r.rating} />
               <time dateTime={r.date}>{date(r.date)}</time>
+              {r.user?._id !== userId && <ReportButton resto={resto} review={r} className="report-link review__report" />}
             </div>
             {r.comment && <p>{r.comment}</p>}
             <Reply key={r.reply?.date || 'none'} restoId={resto._id} review={r} canReply={canReply} onChanged={() => load(1)} />
