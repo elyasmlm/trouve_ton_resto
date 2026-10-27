@@ -17,6 +17,84 @@ function Stars({ value }) {
   )
 }
 
+// Réponse du restaurateur sous un avis ; ceux qui peuvent répondre (propriétaire, admin) l'écrivent, la modifient ou la retirent
+function Reply({ restoId, review, canReply, onChanged }) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState(review.reply?.text || '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const url = `/restos/${restoId}/reviews/${review._id}/reply`
+
+  const run = async (call) => {
+    setBusy(true)
+    setError('')
+    try {
+      await call()
+      setEditing(false)
+      onChanged()
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <form
+        className="review__reply"
+        onSubmit={(e) => {
+          e.preventDefault()
+          run(() => api.put(url, { text: text.trim() }))
+        }}
+      >
+        <div className="field">
+          <label htmlFor={`reply-${review._id}`}>Ta réponse (publique)</label>
+          <textarea id={`reply-${review._id}`} rows={3} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} required />
+        </div>
+        {error && <p className="alert">{error}</p>}
+        <div className="myreview__actions">
+          <button type="submit" className="btn btn--primary btn--small" disabled={busy || !text.trim()}>
+            Publier la réponse
+          </button>
+          <button type="button" className="btn btn--link" onClick={() => setEditing(false)}>
+            Annuler
+          </button>
+        </div>
+      </form>
+    )
+  }
+
+  if (!review.reply?.text) {
+    return canReply ? (
+      <button type="button" className="btn btn--secondary btn--small review__respond" onClick={() => { setText(''); setEditing(true) }}>
+        Répondre
+      </button>
+    ) : null
+  }
+
+  return (
+    <div className="review__reply">
+      <div className="review__head">
+        <b>Réponse du restaurant</b>
+        <time dateTime={review.reply.date}>{date(review.reply.date)}</time>
+      </div>
+      <p>{review.reply.text}</p>
+      {canReply && (
+        <div className="myreview__actions">
+          <button type="button" className="btn btn--link" onClick={() => { setText(review.reply.text); setEditing(true) }}>
+            Modifier
+          </button>
+          <button type="button" className="btn btn--link" disabled={busy} onClick={() => window.confirm('Supprimer ta réponse ?') && run(() => api.delete(url))}>
+            Supprimer
+          </button>
+        </div>
+      )}
+      {error && <p className="alert">{error}</p>}
+    </div>
+  )
+}
+
 // Formulaire pour écrire, modifier ou supprimer son propre avis
 function MyReview({ restoId, mine, onSaved }) {
   const [rating, setRating] = useState(mine?.rating ?? 0)
@@ -109,6 +187,7 @@ export default function ReviewsSection({ resto, onChange }) {
   const [state, setState] = useState({ status: 'loading', items: [], page: 1, pages: 1, total: 0 })
   const [mine, setMine] = useState(undefined)
   const isOwner = Boolean(user && (user.restos || []).includes(resto._id))
+  const canReply = Boolean(user && (user.role === 'admin' || isOwner))
   const userId = user?._id
 
   const load = useCallback(
@@ -174,6 +253,7 @@ export default function ReviewsSection({ resto, onChange }) {
               <time dateTime={r.date}>{date(r.date)}</time>
             </div>
             {r.comment && <p>{r.comment}</p>}
+            <Reply key={r.reply?.date || 'none'} restoId={resto._id} review={r} canReply={canReply} onChanged={() => load(1)} />
           </li>
         ))}
       </ul>

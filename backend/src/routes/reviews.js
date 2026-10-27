@@ -27,6 +27,13 @@ function requireAuthorOrAdmin(req, res, next) {
   next();
 }
 
+// Répondre à un avis : un propriétaire du resto (restos du compte) ou un admin
+function requireResponder(req, res, next) {
+  const owns = (req.user.restos || []).some((id) => id.equals(req.resto._id));
+  if (req.user.role !== 'admin' && !owns) return next(httpError(403, 'Only the resto owner can reply to reviews'));
+  next();
+}
+
 router.get('/', loadResto, async (req, res, next) => {
   try {
     const p = pageParams(req.query);
@@ -75,6 +82,33 @@ router.patch('/:reviewId', requireAuth, loadResto, loadReview, requireAuthorOrAd
     if (comment !== undefined) req.review.comment = comment;
     await req.review.save();
     await recomputeInsideRating(req.resto._id);
+    res.json({ review: req.review });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT { text } : crée ou remplace la réponse ; l'auteur de l'avis n'est prévenu qu'à la première réponse
+router.put('/:reviewId/reply', requireAuth, loadResto, loadReview, requireResponder, async (req, res, next) => {
+  try {
+    const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+    if (!text || text.length > 1000) throw httpError(400, 'text must be 1 to 1000 characters');
+    const first = !req.review.reply?.text;
+    req.review.reply = { text, user: req.user._id, date: new Date() };
+    await req.review.save();
+    if (first && !req.review.user.equals(req.user._id)) {
+      await notify(req.review.user, 'review_reply', `${req.resto.name} a répondu à ton avis.`, { resto: req.resto._id, review: req.review._id });
+    }
+    res.json({ review: req.review });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/:reviewId/reply', requireAuth, loadResto, loadReview, requireResponder, async (req, res, next) => {
+  try {
+    req.review.reply = undefined;
+    await req.review.save();
     res.json({ review: req.review });
   } catch (err) {
     next(err);

@@ -62,7 +62,16 @@ ensureCollection("reviews", {
     comment: { bsonType: "string" },
     resto: { bsonType: "objectId" },
     user: { bsonType: "objectId" },
-    date: { bsonType: "date" }
+    date: { bsonType: "date" },
+    // réponse publique du restaurateur (une seule par avis)
+    reply: {
+      bsonType: "object",
+      properties: {
+        text: { bsonType: "string", maxLength: 1000 },
+        user: { bsonType: "objectId" },
+        date: { bsonType: "date" }
+      }
+    }
   }
 });
 db.reviews.createIndex({ resto: 1, user: 1 }, { unique: true });

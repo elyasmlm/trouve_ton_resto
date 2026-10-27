@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const TYPES = ['list_invite', 'resto_verified', 'resto_rejected', 'content_removed', 'new_review'];
+const TYPES = ['list_invite', 'resto_verified', 'resto_rejected', 'content_removed', 'new_review', 'review_reply'];
 
 // Notification affichée dans la cloche d'un utilisateur ; créée par services/notifications.js
 const notificationSchema = new mongoose.Schema(

@@ -13,6 +13,12 @@ const reviewSchema = new mongoose.Schema(
     resto: { type: mongoose.Schema.Types.ObjectId, ref: 'Resto', required: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     date: { type: Date, required: true, default: Date.now },
+    // Réponse publique du restaurateur (ou d'un admin) : une seule par avis
+    reply: {
+      text: { type: String, trim: true, minlength: 1, maxlength: 1000 },
+      user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      date: Date,
+    },
   },
   { collection: 'reviews' }
 );

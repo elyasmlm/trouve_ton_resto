@@ -765,3 +765,5 @@ html.search-mode .footer { display: none; }
 .hedit__x { width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: var(--ink-soft); font-size: 1.3rem; cursor: pointer; }
 .hedit__x:hover { background: rgb(67 45 37 / 10%); }
 .hedit__add { min-height: 40px; }
+.review__reply { display: grid; gap: 6px; margin-top: 4px; padding: 10px 14px; border-left: 4px solid var(--yellow); background: #fff8e1; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.review__respond { justify-self: start; }
