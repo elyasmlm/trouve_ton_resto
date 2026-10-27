@@ -5,10 +5,13 @@ import { errorMessage } from '../api/errors.js'
 import { useAuth } from '../auth/useAuth.js'
 import { REASONS } from '../utils/reports.js'
 
+// Motifs qui ont un sens pour un avis (pas « fermé », « doublon » ni « droits d'auteur »)
+const REVIEW_REASONS = ['inappropriate', 'spam', 'inaccurate', 'other']
+
 // Fenêtre « Signaler » : on choisit ce qui pose problème (la photo affichée ou le resto), le motif, et un détail facultatif
-function ReportDialog({ resto, photo, onClose }) {
+function ReportDialog({ resto, photo, review, onClose }) {
   const dialog = useRef(null)
-  const [scope, setScope] = useState(photo ? 'photo' : 'resto')
+  const [scope, setScope] = useState(review ? 'review' : photo ? 'photo' : 'resto')
   const [reason, setReason] = useState('')
   const [details, setDetails] = useState('')
   const [state, setState] = useState({ status: 'idle', error: '' })
@@ -24,7 +27,7 @@ function ReportDialog({ resto, photo, onClose }) {
     try {
       await api.post('/reports', {
         type: scope,
-        target: scope === 'photo' ? photo._id : resto._id,
+        target: scope === 'review' ? review._id : scope === 'photo' ? photo._id : resto._id,
         reason,
         ...(details.trim() && { details: details.trim() }),
       })
@@ -39,8 +42,8 @@ function ReportDialog({ resto, photo, onClose }) {
       <div className="sheet__inner">
         <div className="sheet__head">
           <div>
-            <h2 id="report-title">Signaler</h2>
-            <p>{resto.name}</p>
+            <h2 id="report-title">{review ? 'Signaler un avis' : 'Signaler'}</h2>
+            <p>{review ? `Avis de ${review.user?.username || 'un utilisateur'} sur ${resto.name}` : resto.name}</p>
           </div>
           <button type="button" className="icon-btn" onClick={() => dialog.current.close()} aria-label="Fermer">
             ✕
@@ -76,7 +79,7 @@ function ReportDialog({ resto, photo, onClose }) {
             <fieldset className="fieldset">
               <legend>Pourquoi ?</legend>
               <ul className="reasons">
-                {REASONS.map(([value, label]) => (
+                {REASONS.filter(([value]) => !review || REVIEW_REASONS.includes(value)).map(([value, label]) => (
                   <li key={value}>
                     <label className="switch">
                       <input type="radio" name="reason" value={value} checked={reason === value} onChange={() => setReason(value)} required />
@@ -105,7 +108,7 @@ function ReportDialog({ resto, photo, onClose }) {
   )
 }
 
-export default function ReportButton({ resto, photo, className = 'report-link', children = 'Signaler' }) {
+export default function ReportButton({ resto, photo, review, className = 'report-link', children = 'Signaler' }) {
   const { user } = useAuth()
   const location = useLocation()
   const [open, setOpen] = useState(false)
@@ -122,7 +125,7 @@ export default function ReportButton({ resto, photo, className = 'report-link', 
       <button type="button" className={className} onClick={() => setOpen(true)}>
         {children}
       </button>
-      {open && <ReportDialog resto={resto} photo={photo} onClose={() => setOpen(false)} />}
+      {open && <ReportDialog resto={resto} photo={photo} review={review} onClose={() => setOpen(false)} />}
     </>
   )
 }
